@@ -10,7 +10,6 @@
   "scripts": {
     "build": "rimraf dist && tsc",
     "start": "node dist/cli.js",
-    "dev": "node dist/cli.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
