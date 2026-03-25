@@ -52,6 +52,7 @@ app.use(express.urlencoded({ extended: true }));
 // 上传页面
 app.get('/upload', (req, res) => {
   const currentDir = req.query.dir || '';
+  const dir = (currentDir || '').replace(/^\/|\/$/g, '');
   const html = `
 <!DOCTYPE html>
 <html>
@@ -73,12 +74,12 @@ app.get('/upload', (req, res) => {
   <p>当前目录: ${currentDir || '/'}</p>
   <div class="upload-form">
     <form action="/upload" method="post" enctype="multipart/form-data">
-      <input type="hidden" name="dir" value="${currentDir}">
+      <input type="hidden" name="dir" value="${dir}">
       <input type="file" name="file" multiple required>
       <input type="submit" value="开始上传">
     </form>
   </div>
-  <a href="${currentDir ? '/' + currentDir : '/'}" class="back-link">← 返回文件列表</a>
+  <a href="${dir ? '/' + dir : '/'}" class="back-link">← 返回文件列表</a>
 </body>
 </html>
   `;
@@ -89,6 +90,7 @@ app.get('/upload', (req, res) => {
 app.post('/upload', upload.array('file'), (req, res) => {
   const currentDir = req.body.dir || '';
   const files = req.files.map(f => f.originalname);
+  const dir = (currentDir || '').replace(/^\/|\/$/g, '');
   const html = `
 <!DOCTYPE html>
 <html>
@@ -110,8 +112,8 @@ app.post('/upload', upload.array('file'), (req, res) => {
       ${files.map(f => `<li>${f}</li>`).join('')}
     </ul>
   </div>
-  <a href="${currentDir ? '/' + currentDir : '/'}" class="back-link">← 返回文件列表</a>
-  <a href="/upload?dir=${currentDir}" class="back-link">继续上传 →</a>
+  <a href="${dir ? '/' + dir : '/'}" class="back-link">← 返回文件列表</a>
+  <a href="/upload?dir=${dir}" class="back-link">继续上传 →</a>
 </body>
 </html>
   `;
@@ -122,11 +124,19 @@ app.post('/upload', upload.array('file'), (req, res) => {
 app.use(express.static(STATIC_ROOT));
 app.use('/', serveIndex(STATIC_ROOT, { 
   icons: true,
-  template: function (vars) {
-    // 在目录列表页添加上传按钮
-    const original = serveIndex.defaultTemplate(vars);
-    const uploadBtn = `<p style="margin: 10px 0;"><a href="/upload?dir=${vars.currentDir.replace(/^\/|\/$/g, '')}" style="display: inline-block; background: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">📤 上传文件</a></p>`;
-    return original.replace('<div id="content">', `<div id="content">${uploadBtn}`);
+  template: function (vars, callback) {
+    // 默认模板使用内置的 HTML 文件，我们读取后修改注入上传按钮
+    const fs = require('fs');
+    const path = require('path');
+    fs.readFile(path.join(__dirname, 'node_modules', 'serve-index', 'public', 'directory.html'), 'utf8', (err, data) => {
+      if (err) {
+        return callback(err);
+      }
+      const dir = (vars.currentDir || '').replace(/^\/|\/$/g, '');
+      const uploadBtn = `<p style="margin: 10px 0;"><a href="/upload?dir=${dir}" style="display: inline-block; background: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">📤 上传文件</a></p>`;
+      const modified = data.replace('<div id="content">', `<div id="content">${uploadBtn}`);
+      callback(null, modified);
+    });
   }
 }));
 
