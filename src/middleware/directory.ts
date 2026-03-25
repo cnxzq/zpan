@@ -2,7 +2,7 @@ import serveIndex from 'serve-index';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
-import config from '../config';
+import config from '../config.js';
 
 export function createDirectoryMiddleware() {
   // 静态文件服务
@@ -24,15 +24,17 @@ export function createDirectoryMiddleware() {
 
     // 拦截 res.end 来修改 HTML 注入上传按钮
     const originalEnd = res.end;
-    res.end = function(data: any, encoding?: BufferEncoding) {
+    res.end = function(...args: any[]) {
+      let [data, encoding] = args;
       if (typeof data === 'string' && data.includes('ul#files')) {
         const dir = req.path.replace(/\?.*$/, '').replace(/\/$/, '');
         const currentDir = dir ? dir.substring(1) : '';
         const uploadBtn = `<div style="margin: 15px 0;"><a href="/upload?dir=${currentDir}" style="display: inline-block; background: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">📤 上传文件</a></div>`;
         data = data.replace('</h1>', `</h1>\n${uploadBtn}`);
       }
-      originalEnd.call(this, data, encoding);
-    };
+      // @ts-ignore
+      return originalEnd.call(this, data, encoding);
+    } as any;
 
     // 继续给 serve-index 处理
     serveIndex(config.STATIC_ROOT, { icons: true })(req, res, next);

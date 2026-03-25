@@ -1,5 +1,5 @@
 import basicAuth from 'express-basic-auth';
-import config from '../config';
+import config from '../config.js';
 
 export function createAuthMiddleware() {
   const users: Record<string, string> = {};

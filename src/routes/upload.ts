@@ -2,13 +2,14 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import config from '../config';
+import config from '../config.js';
+import type { Request, Response } from 'express';
 
 const router = express.Router();
 
 // 配置 multer 存储
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: function (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) {
     const uploadPath = path.join(config.STATIC_ROOT, req.body.dir || '');
     // 确保目录存在
     if (!fs.existsSync(uploadPath)) {
@@ -16,19 +17,19 @@ const storage = multer.diskStorage({
     }
     cb(null, uploadPath);
   },
-  filename: function (req, file, cb) {
+  filename: function (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) {
     // 使用原始文件名
     cb(null, file.originalname);
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: config.MAX_FILE_SIZE }
 });
 
 // 上传页面
-router.get('/upload', (req, res) => {
+router.get('/upload', (req: Request, res: Response) => {
   const currentDir = req.query.dir as string || '';
   const dir = (currentDir || '').replace(/^\/|\/$/g, '');
   const html = `
@@ -65,10 +66,11 @@ router.get('/upload', (req, res) => {
 });
 
 // 处理文件上传
-router.post('/upload', upload.array('file'), (req, res) => {
+router.post('/upload', upload.array('file'), (req: Request, res: Response) => {
   const currentDir = req.body.dir as string || '';
   const dir = (currentDir || '').replace(/^\/|\/$/g, '');
-  const files = req.files?.map(f => f.originalname) || [];
+  // multer 对于 array('file') 返回 File[] 在 req.files
+  const files = (req.files as Express.Multer.File[])?.map(f => f.originalname) || [];
   const html = `
 <!DOCTYPE html>
 <html>

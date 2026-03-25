@@ -1,8 +1,8 @@
 import express from 'express';
-import { createAuthMiddleware } from './middleware/auth';
-import { createDirectoryMiddleware } from './middleware/directory';
-import uploadRoutes from './routes/upload';
-import config from './config';
+import { createAuthMiddleware } from './middleware/auth.js';
+import { createDirectoryMiddleware } from './middleware/directory.js';
+import uploadRoutes from './routes/upload.js';
+import config from './config.js';
 
 export function createApp() {
   const app = express();

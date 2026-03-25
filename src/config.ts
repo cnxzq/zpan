@@ -1,4 +1,4 @@
-require('dotenv').config();
+import 'dotenv/config';
 
 function parseArgs(): { portArg: string | null, dirArg: string | null } {
   let portArg: string | null = null;
