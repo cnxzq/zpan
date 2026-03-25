@@ -1,0 +1,12 @@
+# 开发和测试文件不进npm包
+test/
+*.log
+coverage/
+.DS_Store
+*.tgz
+node_modules/
+.git/
+.gitignore
+.env
+.env.local
+release/
