@@ -1,16 +1,23 @@
 {
-  "name": "auth-static-server",
+  "name": "ark-pan",
   "version": "1.0.0",
-  "description": "Basic auth protected static file server for zq-sh",
-  "main": "auth-server.js",
-  "dependencies": {
-    "dotenv": "^16.4.5",
-    "express": "^4.18.2",
-    "express-basic-auth": "^1.2.1",
-    "multer": "^2.1.1",
-    "serve-index": "^1.9.1"
+  "description": "带认证的静态文件网盘，支持文件上传和内网穿透",
+  "main": "index.js",
+  "bin": {
+    "ark-pan": "cli.js"
   },
   "scripts": {
-    "start": "node auth-server.js"
-  }
+    "start": "node cli.js",
+    "dev": "node cli.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-basic-auth": "^1.2.1",
+    "serve-index": "^1.9.1",
+    "multer": "^2.1.1",
+    "dotenv": "^16.4.5"
+  },
+  "keywords": ["static-server", "file-sharing", "pan", "upload", "basic-auth"],
+  "author": "",
+  "license": "MIT"
 }
