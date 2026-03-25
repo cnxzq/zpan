@@ -11,6 +11,8 @@
     "serve-index": "^1.9.1"
   },
   "scripts": {
-    "start": "node auth-server.js"
+    "start": "node auth-server.js",
+    "dev": "node auth-server.js",
+    "release": "bash ./release.sh"
   }
 }
