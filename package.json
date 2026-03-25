@@ -2,27 +2,39 @@
   "name": "ark-pan",
   "version": "1.0.0",
   "description": "带认证的静态文件网盘，支持文件上传和内网穿透",
-  "main": "index.js",
+  "main": "dist/cli.js",
   "bin": {
-    "ark-pan": "cli.js"
+    "ark-pan": "dist/cli.js"
   },
   "scripts": {
-    "start": "node cli.js",
-    "dev": "node cli.js",
+    "build": "rolldown -c rolldown.config.js",
+    "start": "node dist/cli.js",
+    "dev": "node dist/cli.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "@types/serve-index": "^1.9.4",
+    "jest": "^29.7.0",
+    "rolldown": "^1.0.0-rc.11",
+    "typescript": "^6.0.2"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
     "express": "^4.18.2",
     "express-basic-auth": "^1.2.1",
-    "serve-index": "^1.9.1",
     "multer": "^2.1.1",
-    "dotenv": "^16.4.5"
+    "serve-index": "^1.9.1"
   },
-  "keywords": ["static-server", "file-sharing", "pan", "upload", "basic-auth"],
+  "keywords": [
+    "static-server",
+    "file-sharing",
+    "pan",
+    "upload",
+    "basic-auth"
+  ],
   "author": "",
   "license": "MIT"
 }

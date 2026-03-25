@@ -1,8 +1,8 @@
 require('dotenv').config();
 
-function parseArgs() {
-  let portArg = null;
-  let dirArg = null;
+function parseArgs(): { portArg: string | null, dirArg: string | null } {
+  let portArg: string | null = null;
+  let dirArg: string | null = null;
   let i = 2;
   while (i < process.argv.length) {
     if (process.argv[i] === '--version' || process.argv[i] === '-v') {
@@ -46,14 +46,14 @@ Examples:
 
 const { portArg, dirArg } = parseArgs();
 
-module.exports = {
+export default {
   PORT: process.env.PORT ? parseInt(process.env.PORT) : (portArg ? parseInt(portArg) : 8090),
   HOST: process.env.HOST || '127.0.0.1',
   STATIC_ROOT: process.env.STATIC_ROOT || (dirArg || process.cwd()),
   USERNAME: process.env.USERNAME || 'admin',
   PASSWORD: process.env.PASSWORD || 'admin123',
   REALM: process.env.REALM || 'Ark Pan - Protected Area',
-  MAX_FILE_SIZE: process.env.MAX_FILE_SIZE 
-    ? parseInt(process.env.MAX_FILE_SIZE) 
+  MAX_FILE_SIZE: process.env.MAX_FILE_SIZE
+    ? parseInt(process.env.MAX_FILE_SIZE)
     : 10 * 1024 * 1024 * 1024, // 默认 10GB
 };

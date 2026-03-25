@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const { createApp } = require('./src/app');
-const config = require('./src/config');
+import { createApp } from './src/app.ts';
+import config from './src/config.ts';
 
 const app = createApp();
 

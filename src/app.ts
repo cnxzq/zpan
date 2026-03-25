@@ -1,10 +1,10 @@
-const express = require('express');
-const { createAuthMiddleware } = require('./middleware/auth');
-const { createDirectoryMiddleware } = require('./middleware/directory');
-const uploadRoutes = require('./routes/upload');
-const config = require('./config');
+import express from 'express';
+import { createAuthMiddleware } from './middleware/auth';
+import { createDirectoryMiddleware } from './middleware/directory';
+import uploadRoutes from './routes/upload';
+import config from './config';
 
-function createApp() {
+export function createApp() {
   const app = express();
 
   // 基础认证
@@ -23,5 +23,3 @@ function createApp() {
 
   return app;
 }
-
-module.exports = { createApp };

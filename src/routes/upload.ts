@@ -1,8 +1,8 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const config = require('../config');
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import config from '../config';
 
 const router = express.Router();
 
@@ -29,7 +29,7 @@ const upload = multer({
 
 // 上传页面
 router.get('/upload', (req, res) => {
-  const currentDir = req.query.dir || '';
+  const currentDir = req.query.dir as string || '';
   const dir = (currentDir || '').replace(/^\/|\/$/g, '');
   const html = `
 <!DOCTYPE html>
@@ -66,9 +66,9 @@ router.get('/upload', (req, res) => {
 
 // 处理文件上传
 router.post('/upload', upload.array('file'), (req, res) => {
-  const currentDir = req.body.dir || '';
+  const currentDir = req.body.dir as string || '';
   const dir = (currentDir || '').replace(/^\/|\/$/g, '');
-  const files = req.files.map(f => f.originalname);
+  const files = req.files?.map(f => f.originalname) || [];
   const html = `
 <!DOCTYPE html>
 <html>
@@ -98,4 +98,4 @@ router.post('/upload', upload.array('file'), (req, res) => {
   res.send(html);
 });
 
-module.exports = router;
+export default router;
