@@ -6,6 +6,7 @@ const serveIndex = require('serve-index');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 
 const app = express();
 
@@ -31,7 +32,7 @@ app.use(basicAuth({
 // 配置 multer 用于文件上传
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(STATIC_ROOT, req.query.dir || '');
+    const uploadPath = path.join(STATIC_ROOT, req.body.dir || '');
     // 确保目录存在
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
@@ -89,8 +90,8 @@ app.get('/upload', (req, res) => {
 // 处理文件上传
 app.post('/upload', upload.array('file'), (req, res) => {
   const currentDir = req.body.dir || '';
-  const files = req.files.map(f => f.originalname);
   const dir = (currentDir || '').replace(/^\/|\/$/g, '');
+  const files = req.files.map(f => f.originalname);
   const html = `
 <!DOCTYPE html>
 <html>
@@ -120,25 +121,39 @@ app.post('/upload', upload.array('file'), (req, res) => {
   res.send(html);
 });
 
-// 静态文件服务 + 目录浏览
+// 静态文件服务
 app.use(express.static(STATIC_ROOT));
-app.use('/', serveIndex(STATIC_ROOT, { 
-  icons: true,
-  template: function (vars, callback) {
-    // 默认模板使用内置的 HTML 文件，我们读取后修改注入上传按钮
-    const fs = require('fs');
-    const path = require('path');
-    fs.readFile(path.join(__dirname, 'node_modules', 'serve-index', 'public', 'directory.html'), 'utf8', (err, data) => {
-      if (err) {
-        return callback(err);
-      }
-      const dir = (vars.currentDir || '').replace(/^\/|\/$/g, '');
-      const uploadBtn = `<p style="margin: 10px 0;"><a href="/upload?dir=${dir}" style="display: inline-block; background: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">📤 上传文件</a></p>`;
-      const modified = data.replace('<div id="content">', `<div id="content">${uploadBtn}`);
-      callback(null, modified);
-    });
+
+// 目录浏览 - 通过自定义中间剂来注入上传按钮
+app.use((req, res, next) => {
+  // 只有当请求目录才需要注入
+  const fullPath = path.join(STATIC_ROOT, req.path);
+  try {
+    const stat = fs.statSync(fullPath);
+    if (!stat.isDirectory()) {
+      // 不是目录，交给 express.static 处理
+      return next();
+    }
+  } catch (e) {
+    return next();
   }
-}));
+
+  // 拦截 res.end 来修改 HTML
+  const originalEnd = res.end;
+  let chunks = [];
+  res.end = function(data, encoding) {
+    if (data && typeof data === 'string' && data.includes('ul#files')) {
+      const dir = req.path.replace(/\?.*$/, '').replace(/\/$/, '');
+      const currentDir = dir ? dir.substring(1) : '';
+      const uploadBtn = `<div style="margin: 15px 0;"><a href="/upload?dir=${currentDir}" style="display: inline-block; background: #4CAF50; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">📤 上传文件</a></div>`;
+      data = data.replace('</h1>', `</h1>\n${uploadBtn}`);
+    }
+    originalEnd.call(this, data, encoding);
+  };
+
+  // 继续给 serve-index 处理
+  serveIndex(STATIC_ROOT, { icons: true })(req, res, next);
+});
 
 app.listen(PORT, HOST, () => {
   console.log(`🚀 Ark Pan running on http://${HOST}:${PORT}`);
