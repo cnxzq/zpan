@@ -44,6 +44,8 @@ Examples:
   return { portArg, dirArg };
 }
 
+export { parseArgs };
+
 const { portArg, dirArg } = parseArgs();
 
 export default {

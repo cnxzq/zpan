@@ -1,7 +1,7 @@
-import { createDirectoryMiddleware } from '../src/middleware/directory';
+import { createDirectoryMiddleware } from '../src/middleware/directory.js';
 
 describe('createDirectoryMiddleware', () => {
-  it('should return an object with both middleware', () => {
+  it('should return static and directory middleware', () => {
     const result = createDirectoryMiddleware();
     expect(result.static).toBeDefined();
     expect(result.directory).toBeDefined();
