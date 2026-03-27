@@ -54,6 +54,9 @@ export class ZpanInstance {
    * Get the listening address
    */
   getAddress(): string {
+    if (this.config.baseUrl) {
+      return `http://${this.config.host}:${this.config.port}${this.config.baseUrl}`;
+    }
     return `http://${this.config.host}:${this.config.port}`;
   }
 }
