@@ -30,4 +30,15 @@ describe('config', () => {
   it('should have STATIC_ROOT defined', () => {
     expect(config.STATIC_ROOT.length).toBeGreaterThan(0);
   });
+
+  it('should have USERS property', () => {
+    expect(config.USERS).toBeDefined();
+    expect(typeof config.USERS).toBe('object');
+  });
+
+  it('should default to single user from USERNAME/PASSWORD when no USERS env', () => {
+    const defaultUsername = process.env.USERNAME || 'admin';
+    const defaultPassword = process.env.PASSWORD || 'admin123';
+    expect(config.USERS[defaultUsername]).toBe(defaultPassword);
+  });
 });

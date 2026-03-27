@@ -1,13 +1,16 @@
-import basicAuth from 'express-basic-auth';
-import config from '../config.js';
+import type { Request, Response, NextFunction } from 'express';
 
-export function createAuthMiddleware() {
-  const users: Record<string, string> = {};
-  users[config.USERNAME] = config.PASSWORD;
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  // If already logged in, allow access
+  if (req.session?.loggedIn === true) {
+    return next();
+  }
 
-  return basicAuth({
-    users: users,
-    challenge: true,
-    realm: config.REALM
-  });
+  // If requesting login page, allow
+  if (req.path === '/login') {
+    return next();
+  }
+
+  // Not logged in, redirect to login page
+  res.redirect('/login');
 }

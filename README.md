@@ -67,8 +67,9 @@ npm start
 | `PORT` | `8090` | 监听端口 |
 | `HOST` | `127.0.0.1` | 绑定地址 |
 | `STATIC_ROOT` | 当前目录 | 静态文件根目录 |
-| `USERNAME` | `admin` | 认证用户名 |
-| `PASSWORD` | `admin123` | 认证密码 |
+| `USERNAME` | `admin` | 认证用户名（单用户模式） |
+| `PASSWORD` | `admin123` | 认证密码（单用户模式） |
+| `USERS` | - | 多用户配置，格式：`username1:password1,username2:password2`（多用户模式） |
 | `REALM` | `Ark Pan - Protected Area` | 认证域名称 |
 | `MAX_FILE_SIZE` | `10GB` | 最大上传文件大小 |
 
@@ -82,9 +83,12 @@ HOST=0.0.0.0
 # Directory
 STATIC_ROOT=/home/user/files
 
-# Auth
+# Auth (单用户模式)
 USERNAME=myuser
 PASSWORD=mypassword
+
+# Auth (多用户模式，设置后覆盖单用户配置)
+# USERS=alice:secret123,bob:password456,charlie:mypassword
 
 # Upload
 MAX_FILE_SIZE=10737418240
