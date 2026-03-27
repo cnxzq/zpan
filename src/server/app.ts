@@ -48,10 +48,15 @@ export function createServer(config: ZpanConfig): express.Express {
   app.use(express.static(frontendPublicPath));
 
   // Login routes - no authentication required
-  app.use(createLoginRoutes(config));
+  if (config.baseUrl) {
+    app.use(config.baseUrl, createLoginRoutes(config));
+  } else {
+    app.use(createLoginRoutes(config));
+  }
 
   // Public config endpoint - provides baseUrl etc. to frontend
-  app.get('/api/config', (req, res) => {
+  const configPath = config.baseUrl ? `${config.baseUrl}/api/config` : '/api/config';
+  app.get(configPath, (req, res) => {
     res.json({
       baseUrl: config.baseUrl,
       name: config.name,
@@ -59,28 +64,47 @@ export function createServer(config: ZpanConfig): express.Express {
   });
 
   // Authentication middleware - after static files, before APIs/user files
-  app.use(authMiddleware);
+  app.use(authMiddleware(config));
 
   // ========== Backend API ==========
   // All backend APIs are under /api/** - requires authentication
-  app.use('/api', createApiRoutes(config));
+  const apiPath = config.baseUrl ? `${config.baseUrl}/api` : '/api';
+  app.use(apiPath, createApiRoutes(config));
 
   // Thumbnail routes - requires authentication
-  app.use(createThumbnailRoutes(config));
+  if (config.baseUrl) {
+    app.use(config.baseUrl, createThumbnailRoutes(config));
+  } else {
+    app.use(createThumbnailRoutes(config));
+  }
 
   // Upload routes - requires authentication
-  app.use(createUploadRoutes(config));
+  if (config.baseUrl) {
+    app.use(config.baseUrl, createUploadRoutes(config));
+  } else {
+    app.use(createUploadRoutes(config));
+  }
 
   // ========== User files static serving ==========
   // Serve user-owned files directly from configured staticRoot directory
   // Requires authentication - all user files are protected
   // Direct file downloads work normally - frontend only handles directory browsing
   // Disable cache to ensure newly uploaded files are visible immediately
-  app.use(express.static(config.staticRoot, {
-    etag: false,
-    cacheControl: false,
-    maxAge: 0,
-  }));
+  if (config.baseUrl) {
+    // When baseUrl is set, user files are also under baseUrl
+    // So we need to serve static files from the baseUrl path
+    app.use(config.baseUrl, express.static(config.staticRoot, {
+      etag: false,
+      cacheControl: false,
+      maxAge: 0,
+    }));
+  } else {
+    app.use(express.static(config.staticRoot, {
+      etag: false,
+      cacheControl: false,
+      maxAge: 0,
+    }));
+  }
 
   // SPA fallback - any non-API, non-existing file request serves index.html
   // Frontend handles client-side routing (login, browse, etc.)
