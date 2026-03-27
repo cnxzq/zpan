@@ -50,6 +50,14 @@ export function createServer(config: ZpanConfig): express.Express {
   // Login routes - no authentication required
   app.use(createLoginRoutes(config));
 
+  // Public config endpoint - provides baseUrl etc. to frontend
+  app.get('/api/config', (req, res) => {
+    res.json({
+      baseUrl: config.baseUrl,
+      name: config.name,
+    });
+  });
+
   // Authentication middleware - after static files, before APIs/user files
   app.use(authMiddleware);
 

@@ -8,11 +8,11 @@ export interface ZpanConfig {
   port: number;
   /** Host to bind to */
   host: string;
+  /** Base URL when deployed under a subpath (e.g. /zpan) */
+  baseUrl: string;
   /** Root directory to serve files from */
   staticRoot: string;
   /** Username for authentication */
-  username: string;
-  /** Password for authentication */
   password: string;
   /** Authentication realm */
   realm: string;
@@ -22,6 +22,8 @@ export interface ZpanConfig {
   sessionSecret: string;
   /** Session cookie name */
   sessionName: string;
+  /** Username for authentication */
+  username: string;
 }
 
 /**

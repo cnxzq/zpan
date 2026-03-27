@@ -16,6 +16,7 @@ export interface CliParseResult {
   name: string | null;
   port: string | null;
   host: string | null;
+  baseUrl: string | null;
   staticRoot: string | null;
   username: string | null;
   password: string | null;
@@ -65,6 +66,7 @@ export function parseArgs(): CliParseResult {
     name: null,
     port: null,
     host: null,
+    baseUrl: null,
     staticRoot: null,
     username: null,
     password: null,
@@ -98,6 +100,9 @@ export function parseArgs(): CliParseResult {
       i++;
     } else if (arg === '--host' && next) {
       result.host = next;
+      i++;
+    } else if (arg === '--base-url' && next || arg === '--baseUrl' && next) {
+      result.baseUrl = next;
       i++;
     } else if (arg === '--root' && next || arg === '--static-root' && next) {
       result.staticRoot = next;
@@ -176,6 +181,7 @@ export function loadConfig(
     name: parsedArgs.name || jsonConfig?.name || 'zpan',
     port: parsedArgs.port ? parseInt(parsedArgs.port) : (jsonConfig?.port || 8090),
     host: parsedArgs.host || jsonConfig?.host || '127.0.0.1',
+    baseUrl: parsedArgs.baseUrl || jsonConfig?.baseUrl || '',
     staticRoot: parsedArgs.staticRoot || jsonConfig?.staticRoot || process.cwd(),
     username: parsedArgs.username || jsonConfig?.username || 'admin',
     password: parsedArgs.password || jsonConfig?.password || 'admin123',
@@ -189,6 +195,12 @@ export function loadConfig(
 
   // Resolve staticRoot to absolute path
   config.staticRoot = path.resolve(process.cwd(), config.staticRoot);
+
+  // Ensure baseUrl starts with / and doesn't end with /
+  if (config.baseUrl && !config.baseUrl.startsWith('/')) {
+    config.baseUrl = '/' + config.baseUrl;
+  }
+  config.baseUrl = config.baseUrl.replace(/\/$/, '');
 
   return config;
 }
@@ -207,6 +219,7 @@ export function generateDefaultConfig(outputPath: string): boolean {
     name: 'zpan',
     port: 8090,
     host: '127.0.0.1',
+    baseUrl: '',
     staticRoot: './',
     username: 'admin',
     password: 'admin123',
@@ -239,17 +252,18 @@ Usage:
   zpan start [options]        Start the server
 
 Config Options:
-  -c, --config <path>         Path to JSON config file (default: zpan.config.json)
-  --name <name>               Override instance name
-  --port <port>               Override listen port
-  --host <host>               Override bind host
-  --root, --static-root <dir> Override root directory to serve
-  --username, --user <user>   Override username
-  --password, --pass <pass>   Override password
-  --realm <realm>             Override authentication realm
-  --max-size, --max-file-size <size> Override max upload size (supports 10MB, 1GB, etc.)
-  --session-secret <secret>   Override session secret
-  --session-name <name>       Override session cookie name
+  -c, --config <path>                Path to JSON config file (default: zpan.config.json)
+  --name <name>                      Override instance name
+  --port <port>                      Override listen port
+  --host <host>                      Override bind host
+  --base-url, --baseUrl <url>        Override base URL when deployed under subpath (e.g. /zpan)
+  --root, --static-root <dir>        Override root directory to serve
+  --username, --user <user>          Override username
+  --password, --pass <pass>          Override password
+  --realm <realm>                    Override authentication realm
+  --max-size, --max-file-size <size>  Override max upload size (supports 10MB, 1GB, etc.)
+  --session-secret <secret>          Override session secret
+  --session-name <name>              Override session cookie name
 
 Global Options:
   -v, --version               Show version

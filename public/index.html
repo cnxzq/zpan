@@ -497,12 +497,18 @@
         const error = ref(null);
         const loggedIn = ref(false);
         const checkingAuth = ref(true);
+        const baseUrl = ref('');
 
         // Login modal
         const showLoginModal = ref(false);
         const loginForm = ref({ username: '', password: '' });
         const loginError = ref('');
         const loggingIn = ref(false);
+
+        // Build full API URL with baseUrl
+        function apiUrl(path) {
+          return baseUrl.value + path;
+        }
 
         // Upload modal
         const showUploadModal = ref(false);
@@ -517,9 +523,21 @@
           return currentDir.value.split('/').filter(p => p);
         });
 
+        // Load public config from server
+        async function loadConfig() {
+          try {
+            const res = await fetch(apiUrl('/api/config'));
+            const data = await res.json();
+            baseUrl.value = data.baseUrl || '';
+          } catch (err) {
+            console.error('Failed to load config:', err);
+            baseUrl.value = '';
+          }
+        }
+
         async function checkAuth() {
           try {
-            const res = await fetch('/api/auth/status');
+            const res = await fetch(apiUrl('/api/auth/status'));
             const data = await res.json();
             loggedIn.value = data.loggedIn;
           } catch (err) {
@@ -551,7 +569,7 @@
           loginError.value = '';
 
           try {
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch(apiUrl('/api/auth/login'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -577,7 +595,7 @@
 
         async function handleLogout() {
           try {
-            await fetch('/api/auth/logout');
+            await fetch(apiUrl('/api/auth/logout'));
             loggedIn.value = false;
             files.value = [];
             error.value = null;
@@ -623,7 +641,7 @@
           });
 
           try {
-            const res = await fetch('/api/upload', {
+            const res = await fetch(apiUrl('/api/upload'), {
               method: 'POST',
               body: formData,
             });
@@ -675,7 +693,7 @@
 
         function thumbnailUrl(file) {
           const path = currentDir.value ? `${currentDir.value}/${file.name}` : file.name;
-          return `/thumbnail?path=${encodeURIComponent(path)}`;
+          return apiUrl(`/thumbnail?path=${encodeURIComponent(path)}`);
         }
 
         function navigateTo(parts) {
@@ -698,7 +716,7 @@
           error.value = null;
 
           try {
-            const response = await fetch(`/api/list?dir=${encodeURIComponent(currentDir.value)}`);
+            const response = await fetch(apiUrl(`/api/list?dir=${encodeURIComponent(currentDir.value)}`));
             if (!response.ok) {
               throw new Error('网络错误');
             }
@@ -717,8 +735,9 @@
           }
         }
 
-        onMounted(() => {
+        onMounted(async () => {
           window.addEventListener('popstate', onPopState);
+          await loadConfig();
           checkAuth();
 
           // Watch layout changes
