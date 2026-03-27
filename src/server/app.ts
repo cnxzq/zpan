@@ -20,12 +20,18 @@ import type { ZpanConfig } from '../config/schema';
 export function createServer(config: ZpanConfig): express.Express {
   const app = express();
 
+  // Trust proxy when running behind reverse proxy (Nginx, etc.)
+  // Required for correct secure cookie detection when SSL is terminated at proxy
+  app.set('trust proxy', 1);
+
   // Cookie session must come before authentication
   app.use(cookieSession({
     name: config.sessionName,
     keys: [config.sessionSecret],
     httpOnly: true,
     sameSite: 'lax',
+    // Auto-detect secure based on trust proxy
+    // When behind proxy, app.set('trust proxy', 1) makes this work correctly
     secure: process.env.NODE_ENV === 'production',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   }));
