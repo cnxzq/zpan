@@ -16,6 +16,12 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     return;
   }
 
-  // Not logged in, redirect to login page
+  // For API requests, return JSON error instead of redirect
+  if (req.path.startsWith('/api/')) {
+    res.status(401).json({ error: 'Unauthorized', message: '需要登录才能访问' });
+    return;
+  }
+
+  // For non-API page requests, redirect to login page
   res.redirect('/login');
 }

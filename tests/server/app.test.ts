@@ -30,12 +30,12 @@ describe('createServer', () => {
     expect(response.type).toBe('text/html');
   });
 
-  it('should redirect to login for API when not authenticated', async () => {
+  it('should return 401 for API when not authenticated', async () => {
     const app = createServer(testConfig);
-    // API is after auth middleware, so should redirect to login
+    // API is after auth middleware, so should return 401 Unauthorized
     const response = await request(app).get('/api/list').query({ dir: '.' });
-    expect(response.status).toBe(302);
-    expect(response.headers.location).toBe('/login');
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Unauthorized');
   });
 });
 
