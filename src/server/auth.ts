@@ -10,8 +10,8 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     return;
   }
 
-  // If requesting login page, allow
-  if (req.path === '/login') {
+  // Allow login page and all authentication API
+  if (req.path === '/login' || req.path.startsWith('/api/auth/')) {
     next();
     return;
   }
