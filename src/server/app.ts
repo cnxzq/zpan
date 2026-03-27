@@ -46,6 +46,9 @@ export function createServer(config: ZpanConfig): express.Express {
   // Even unauthenticated users need to load the login page
   const frontendPublicPath = path.dirname(getIndexHtmlPath());
   app.use(express.static(frontendPublicPath));
+  if (config.baseUrl) {
+    app.use(config.baseUrl, express.static(frontendPublicPath));
+  }
 
   // Login routes - no authentication required
   if (config.baseUrl) {
