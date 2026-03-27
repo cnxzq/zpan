@@ -45,9 +45,11 @@ export function createServer(config: ZpanConfig): express.Express {
   // Frontend static files (index.html, JS/CSS) DO NOT require authentication
   // Even unauthenticated users need to load the login page
   const frontendPublicPath = path.dirname(getIndexHtmlPath());
-  app.use(express.static(frontendPublicPath));
+  // Serve from root path (for backward compatibility and direct access)
+  app.use(express.static(frontendPublicPath, { index: 'index.html' }));
+  // Also serve from baseUrl path so baseUrl/pan works correctly
   if (config.baseUrl) {
-    app.use(config.baseUrl, express.static(frontendPublicPath));
+    app.use(config.baseUrl, express.static(frontendPublicPath, { index: 'index.html' }));
   }
 
   // Login routes - no authentication required
@@ -100,17 +102,20 @@ export function createServer(config: ZpanConfig): express.Express {
       etag: false,
       cacheControl: false,
       maxAge: 0,
+      index: false,
     }));
   } else {
     app.use(express.static(config.staticRoot, {
       etag: false,
       cacheControl: false,
       maxAge: 0,
+      index: false,
     }));
   }
 
-  // SPA fallback - any non-API, non-existing file request serves index.html
-  // Frontend handles client-side routing (login, browse, etc.)
+  // SPA fallback - any non-API, non-existing file request serves index.html from public
+  // This handles client-side routing (e.g. /#/files/documents)
+  // It's okay because express.static would have already served existing files
   app.get('*', (req, res) => {
     res.sendFile(getIndexHtmlPath());
   });
