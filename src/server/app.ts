@@ -113,11 +113,9 @@ export function createServer(config: ZpanConfig): express.Express {
     }));
   }
 
-  // SPA fallback - any non-API, non-existing file request serves index.html from public
-  // This handles client-side routing (e.g. /#/files/documents)
-  // It's okay because express.static would have already served existing files
-  app.get('*', (req, res) => {
-    res.sendFile(getIndexHtmlPath());
+  // 404 handler - any non-existing request returns 404
+  app.use((req, res) => {
+    res.status(404).json({ error: 'Not Found' });
   });
 
   return app;
