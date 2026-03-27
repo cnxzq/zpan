@@ -1,0 +1,11 @@
+{
+  "port": 8090,
+  "host": "127.0.0.1",
+  "staticRoot": "/path/to/your/static/files",
+  "username": "admin",
+  "password": "admin123",
+  "realm": "ZPan - Protected Area",
+  "maxFileSize": 10737418240,
+  "sessionSecret": "your-random-secret-key-here",
+  "sessionName": "zpan"
+}

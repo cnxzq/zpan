@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZPan</title>
+  <script src="./vue.global.js"></script>
+  <script src="./vue-router.global.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .breadcrumbs {
+      color: #666;
+      font-size: 14px;
+    }
+    .breadcrumbs a {
+      color: #007bff;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .breadcrumbs a:hover {
+      text-decoration: underline;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .layout-toggle button {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      background: #f5f5f5;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .layout-toggle button.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    .upload-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+    }
+    .upload-btn:hover {
+      background: #218838;
+    }
+    .logout-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #dc3545;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+    }
+    .logout-btn:hover {
+      background: #c82333;
+    }
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    .modal h2 {
+      margin: 0 0 20px 0;
+      font-size: 20px;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: #555;
+      font-size: 14px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+    .error-text {
+      color: #dc3545;
+      font-size: 14px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-actions button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-cancel {
+      background: #f5f5f5;
+      color: #333;
+    }
+    .btn-cancel:hover {
+      background: #e8e8e8;
+    }
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+    .btn-primary:disabled {
+      background: #66b0ff;
+      cursor: not-allowed;
+    }
+    /* Upload file list */
+    .upload-file-list {
+      margin-bottom: 16px;
+    }
+    .upload-file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .upload-file-item-name {
+      font-size: 14px;
+      word-break: break-all;
+    }
+    .upload-file-item-remove {
+      color: #dc3545;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    .upload-file-select {
+      border: 2px dashed #ddd;
+      border-radius: 4px;
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      margin-bottom: 16px;
+      cursor: pointer;
+    }
+    .upload-file-select:hover {
+      border-color: #007bff;
+      color: #007bff;
+    }
+    .upload-file-select input {
+      display: none;
+    }
+    .upload-success {
+      text-align: center;
+      color: #28a745;
+      padding: 20px;
+    }
+    /* List Layout */
+    .file-list.list {
+      display: block;
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .file-list.list .file-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .file-list.list .file-item:last-child {
+      border-bottom: none;
+    }
+    .file-list.list .file-item:hover {
+      background: #fafafa;
+    }
+    .file-list.list .icon {
+      width: 32px;
+      margin-right: 12px;
+      font-size: 20px;
+    }
+    .file-list.list .name {
+      flex: 1;
+    }
+    .file-list.list .name a {
+      color: #333;
+      text-decoration: none;
+    }
+    .file-list.list .size {
+      color: #999;
+      font-size: 14px;
+      width: 80px;
+      text-align: right;
+    }
+    .file-list.list .date {
+      color: #999;
+      font-size: 14px;
+      width: 180px;
+      text-align: right;
+    }
+    /* Grid Layout */
+    .file-list.grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .file-list.grid .file-item {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .file-list.grid .file-item:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .file-list.grid .thumbnail {
+      width: 100%;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      overflow: hidden;
+    }
+    .file-list.grid .thumbnail img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .file-list.grid .thumbnail .folder-icon {
+      font-size: 48px;
+      color: #bbb;
+    }
+    .file-list.grid .file-info {
+      padding: 10px;
+      text-align: center;
+    }
+    .file-list.grid .file-info .name {
+      word-break: break-all;
+      font-size: 13px;
+      color: #333;
+      line-height: 1.4;
+    }
+    .file-list.grid .file-info .size {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+    .file-item a {
+      text-decoration: none;
+      color: inherit;
+    }
+    .loading, .error, .empty {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+      background: white;
+      border-radius: 8px;
+    }
+    .error {
+      color: #dc3545;
+    }
+    /* Not logged in */
+    .not-logged-in {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    @media (max-width: 600px) {
+      .file-list.grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+      }
+      .file-list.grid .thumbnail {
+        height: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="header" v-if="loggedIn">
+        <h1>ZPan</h1>
+        <div class="toolbar">
+          <div class="breadcrumbs">
+            <a @click="navigateTo([])" href="#">/</a>
+            <template v-for="(part, index) in breadcrumbs" :key="index">
+              <span> / </span>
+              <a @click="navigateTo(breadcrumbs.slice(0, index + 1))" href="#">
+                {{ part }}
+              </a>
+            </template>
+          </div>
+          <div class="actions">
+            <div class="layout-toggle">
+              <button :class="{ active: layout === 'grid' }" @click="layout = 'grid'">📷 Grid</button>
+              <button :class="{ active: layout === 'list' }" @click="layout = 'list'">📋 List</button>
+            </div>
+            <button class="upload-btn" @click="openUploadModal">📤 上传文件</button>
+            <button class="logout-btn" @click="handleLogout">🚪 退出</button>
+          </div>
+        </div>
+      </div>
+
+
+      <div v-if="loggedIn" :class="['content', loading ? 'loading' : error ? 'error' : 'file-list ' + layout]">
+        <div v-if="loading">加载中...</div>
+        <div v-else-if="error">加载失败: {{ error }}</div>
+        <div v-else-if="files.length === 0" class="empty">目录为空</div>
+        <template v-else>
+          <div
+            v-if="layout === 'grid'"
+            class="file-item"
+            v-for="file in files"
+            :key="file.name"
+          >
+            <a :href="fileLink(file)">
+              <div class="thumbnail">
+                <div v-if="file.isDirectory" class="folder-icon">📁</div>
+                <img
+                  v-else-if="isImage(file.name)"
+                  :src="thumbnailUrl(file)"
+                  :alt="file.name"
+                >
+                <div v-else class="folder-icon">{{ file.isDirectory ? '📁' : '📄' }}</div>
+              </div>
+              <div class="file-info">
+                <div class="name">{{ file.name }}</div>
+                <div class="size">{{ formatSize(file.size) }}</div>
+              </div>
+            </a>
+          </div>
+
+          <div
+            v-else
+            class="file-item"
+            v-for="file in files"
+            :key="file.name"
+          >
+            <span class="icon">
+              <span>{{ file.isDirectory ? '📁' : '📄' }}</span>
+            </span>
+            <span class="name">
+              <a :href="fileLink(file)">{{ file.name }}</a>
+            </span>
+            <span class="size">{{ formatSize(file.size) }}</span>
+            <span class="date">{{ formatDate(file.mtimeMs) }}</span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div v-if="showLoginModal" class="modal-overlay">
+      <div class="modal">
+        <h2>登录 ZPan</h2>
+        <div v-if="loginError" class="error-text">{{ loginError }}</div>
+        <div class="form-group">
+          <label>用户名</label>
+          <input v-model="loginForm.username" type="text" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input v-model="loginForm.password" type="password" placeholder="请输入密码">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" @click="handleLogin" :disabled="loggingIn">
+            {{ loggingIn ? '登录中...' : '登录' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div v-if="showUploadModal" class="modal-overlay" @click.self="closeUploadModal">
+      <div class="modal">
+        <h2>上传文件</h2>
+        <p style="margin-bottom: 10px; color: #666; font-size: 14px;">当前目录: {{ currentDir || '/' }}</p>
+        <label class="upload-file-select">
+          点击选择文件或拖放文件到这里
+          <input type="file" multiple @change="handleFileSelect" ref="fileInput">
+        </label>
+        <div v-if="selectedFiles.length > 0" class="upload-file-list">
+          <div
+            class="upload-file-item"
+            v-for="(file, index) in selectedFiles"
+            :key="index"
+          >
+            <span class="upload-file-item-name">{{ file.name }} ({{ formatSize(file.size) }})</span>
+            <span class="upload-file-item-remove" @click="removeFile(index)">×</span>
+          </div>
+        </div>
+        <div v-if="uploadSuccess" class="upload-success">
+          ✅ 成功上传 {{ uploadedFiles.length }} 个文件
+        </div>
+        <div v-if="uploadError" class="error-text">{{ uploadError }}</div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="closeUploadModal">取消</button>
+          <button class="btn-primary" @click="handleUpload" :disabled="uploading || selectedFiles.length === 0">
+            {{ uploading ? '上传中...' : '开始上传' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, computed, watch } = Vue;
+
+    createApp({
+      setup() {
+        const params = new URLSearchParams(window.location.search);
+        const currentDir = ref(decodeURIComponent(params.get('dir') || ''));
+        const layout = ref(localStorage.getItem('zpan-layout') || 'grid');
+        const files = ref([]);
+        const loading = ref(true);
+        const error = ref(null);
+        const loggedIn = ref(false);
+        const checkingAuth = ref(true);
+
+        // Login modal
+        const showLoginModal = ref(false);
+        const loginForm = ref({ username: '', password: '' });
+        const loginError = ref('');
+        const loggingIn = ref(false);
+
+        // Upload modal
+        const showUploadModal = ref(false);
+        const selectedFiles = ref([]);
+        const uploading = ref(false);
+        const uploadError = ref('');
+        const uploadSuccess = ref(false);
+        const uploadedFiles = ref([]);
+
+        const breadcrumbs = computed(() => {
+          if (!currentDir.value) return [];
+          return currentDir.value.split('/').filter(p => p);
+        });
+
+        async function checkAuth() {
+          try {
+            const res = await fetch('/api/auth/status');
+            const data = await res.json();
+            loggedIn.value = data.loggedIn;
+          } catch (err) {
+            console.error(err);
+          } finally {
+            checkingAuth.value = false;
+            if (loggedIn.value) {
+              loadDirectory();
+            } else {
+              // Not logged in, open login modal directly
+              openLoginModal();
+            }
+          }
+        }
+
+        function openLoginModal() {
+          showLoginModal.value = true;
+          loginError.value = '';
+        }
+
+        function closeLoginModal() {
+          showLoginModal.value = false;
+          loginForm.value = { username: '', password: '' };
+          loginError.value = '';
+        }
+
+        async function handleLogin() {
+          loggingIn.value = true;
+          loginError.value = '';
+
+          try {
+            const res = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username: loginForm.value.username,
+                password: loginForm.value.password,
+              }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+              loggedIn.value = true;
+              closeLoginModal();
+              loadDirectory();
+            } else {
+              loginError.value = '用户名或密码错误';
+            }
+          } catch (err) {
+            loginError.value = err.message;
+          } finally {
+            loggingIn.value = false;
+          }
+        }
+
+        async function handleLogout() {
+          try {
+            await fetch('/api/auth/logout');
+            loggedIn.value = false;
+            files.value = [];
+            error.value = null;
+          } catch (err) {
+            console.error(err);
+          }
+        }
+
+        function openUploadModal() {
+          showUploadModal.value = true;
+          selectedFiles.value = [];
+          uploadError.value = '';
+          uploadSuccess.value = false;
+          uploadedFiles.value = [];
+        }
+
+        function closeUploadModal() {
+          showUploadModal.value = false;
+          selectedFiles.value = [];
+        }
+
+        function handleFileSelect(e) {
+          const files = Array.from(e.target.files);
+          selectedFiles.value.push(...files);
+          // Clear input so same file can be selected again
+          e.target.value = '';
+        }
+
+        function removeFile(index) {
+          selectedFiles.value.splice(index, 1);
+        }
+
+        async function handleUpload() {
+          uploading.value = true;
+          uploadError.value = '';
+          uploadSuccess.value = false;
+          uploadedFiles.value = [];
+
+          const formData = new FormData();
+          formData.append('dir', currentDir.value);
+          selectedFiles.value.forEach(file => {
+            formData.append('file', file);
+          });
+
+          try {
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await res.json();
+
+            if (data.success) {
+              uploadSuccess.value = true;
+              uploadedFiles.value = data.files;
+              // Reload directory
+              loadDirectory();
+              // Close after 1 second
+              setTimeout(() => {
+                closeUploadModal();
+              }, 1500);
+            } else {
+              uploadError.value = data.error || '上传失败';
+            }
+          } catch (err) {
+            uploadError.value = err.message;
+          } finally {
+            uploading.value = false;
+          }
+        }
+
+        function formatSize(bytes) {
+          if (bytes === 0) return '0 B';
+          const k = 1024;
+          const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatDate(timestamp) {
+          return new Date(timestamp).toLocaleString();
+        }
+
+        function isImage(filename) {
+          const ext = filename.split('.').pop()?.toLowerCase();
+          return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
+        }
+
+        function fileLink(file) {
+          const path = currentDir.value ? `${currentDir.value}/${file.name}` : file.name;
+          if (file.isDirectory) {
+            return `/?dir=${encodeURIComponent(path)}`;
+          }
+          return path;
+        }
+
+        function thumbnailUrl(file) {
+          const path = currentDir.value ? `${currentDir.value}/${file.name}` : file.name;
+          return `/thumbnail?path=${encodeURIComponent(path)}`;
+        }
+
+        function navigateTo(parts) {
+          currentDir.value = parts.join('/');
+          loadDirectory();
+          // Update URL
+          const url = new URL(window.location.href);
+          if (parts.length > 0) {
+            url.searchParams.set('dir', currentDir.value);
+          } else {
+            url.searchParams.delete('dir');
+          }
+          window.history.pushState({ dir: currentDir.value }, '', url);
+        }
+
+        async function loadDirectory() {
+          if (!loggedIn.value) return;
+
+          loading.value = true;
+          error.value = null;
+
+          try {
+            const response = await fetch(`/api/list?dir=${encodeURIComponent(currentDir.value)}`);
+            if (!response.ok) {
+              throw new Error('网络错误');
+            }
+            files.value = await response.json();
+          } catch (err) {
+            error.value = err.message;
+          } finally {
+            loading.value = false;
+          }
+        }
+
+        function onPopState(e) {
+          if (e.state?.dir !== undefined) {
+            currentDir.value = e.state.dir;
+            loadDirectory();
+          }
+        }
+
+        onMounted(() => {
+          window.addEventListener('popstate', onPopState);
+          checkAuth();
+
+          // Watch layout changes
+          watch(layout, (val) => {
+            localStorage.setItem('zpan-layout', val);
+          });
+        });
+
+        return {
+          layout,
+          currentDir,
+          files,
+          loading,
+          error,
+          loggedIn,
+          breadcrumbs,
+          showLoginModal,
+          showUploadModal,
+          loginForm,
+          loginError,
+          loggingIn,
+          selectedFiles,
+          uploading,
+          uploadError,
+          uploadSuccess,
+          uploadedFiles,
+          formatSize,
+          formatDate,
+          isImage,
+          fileLink,
+          thumbnailUrl,
+          navigateTo,
+          openLoginModal,
+          closeLoginModal,
+          handleLogin,
+          openUploadModal,
+          closeUploadModal,
+          handleFileSelect,
+          removeFile,
+          handleUpload,
+          handleLogout,
+        };
+      },
+    }).mount('#app');
+  </script>
+</body>
+</html>

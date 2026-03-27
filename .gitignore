@@ -8,3 +8,4 @@ DEPLOY.md
 .claude
 dist
 coverage/
+.zpan
