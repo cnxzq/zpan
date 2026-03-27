@@ -1,6 +1,6 @@
 {
-  "name": "zpan",
-  "version": "0.0.1",
+  "name": "@zq1988626/zpan",
+  "version": "1.0.0",
   "type": "module",
   "description": "带认证的静态文件网盘，支持文件上传",
   "main": "dist/index.js",
