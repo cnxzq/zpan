@@ -26,7 +26,9 @@ export interface ZpanConfig {
   username: string;
 }
 
+export type ZpanConfigInit = Partial<ZpanConfig>;
+
 /**
  * JSON config input (all fields optional)
  */
-export type JsonConfig = Partial<ZpanConfig>;
+export type JsonConfig = ZpanConfigInit;

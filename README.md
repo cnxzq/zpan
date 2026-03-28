@@ -4,12 +4,15 @@
 
 ## 特性
 
-- 🔐 **带认证** - 基础认证保护，只有登录用户才能访问
+- 🔐 **带认证** - Session 认证保护，只有登录用户才能访问
 - 📤 **支持上传** - 可以直接在网页上传文件到服务器
+- 🖼️ **图片缩略图** - 自动生成图片缩略图，网格浏览更流畅
 - 📱 **响应式设计** - 支持手机和桌面
 - 📊 **两种布局** - 网格视图（预览图片）和列表视图
 - ⚡ **轻量快速** - 基于 Express，非常轻量
 - 🎯 **开箱即用** - 一条命令即可启动
+- 🌐 **子路径部署** - 支持部署到非根路径 (如 `https://yourdomain.com/pan`)
+- 🔍 **调试友好** - `--debug` 参数开启详细调试日志
 
 ## 安装
 
@@ -46,6 +49,7 @@ zpan start [options]
 --name <name>                     覆盖实例名称
 --port <port>                     覆盖监听端口
 --host <host>                     覆盖绑定地址
+--base-url, --baseUrl <url>       覆盖子路径部署基础 URL (例如 /pan)
 --root, --static-root <dir>       覆盖服务根目录
 --username, --user <user>         覆盖用户名
 --password, --pass <pass>         覆盖密码
@@ -54,6 +58,7 @@ zpan start [options]
 --session-secret <secret>         覆盖 Session 密钥
 --session-name <name>             覆盖 Cookie 名称
 
+--debug                           启用调试日志（输出所有 zpan:* 日志）
 -v, --version                     显示版本
 -h, --help                        显示帮助
 ```
@@ -82,6 +87,12 @@ zpan start --port 9000 --host 0.0.0.0 --username admin --password mypass
 # 限制最大上传为 2GB
 zpan start --max-size 2GB
 
+# 启用调试日志查看详细请求和路由信息
+zpan --debug start
+
+# 部署在子路径 /pan，监听 8080
+zpan start --port 8080 --base-url /pan
+
 # 开发模式（从源码运行）
 npm run dev
 ```
@@ -95,6 +106,7 @@ npm run dev
   "name": "zpan",
   "port": 8090,
   "host": "127.0.0.1",
+  "baseUrl": "",
   "staticRoot": "./",
   "username": "admin",
   "password": "admin123",
@@ -112,10 +124,11 @@ npm run dev
 | name | 实例名称，显示在页面标题 |
 | port | 监听端口 |
 | host | 绑定地址，`0.0.0.0` 允许外部访问 |
+| baseUrl | 子路径部署基础 URL，例如 `/pan`，部署到 `https://domain/pan` |
 | staticRoot | 要分享的文件根目录 |
 | username | 登录用户名 |
 | password | 登录密码 |
-| realm | HTTP 基础认证的 realm |
+| realm | 认证域，显示在登录弹窗 |
 | maxFileSize | 最大上传文件大小 (字节) |
 | sessionSecret | Session 加密密钥，留空会自动生成 |
 | sessionName | Session Cookie 名称 |

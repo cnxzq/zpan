@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import type { ZpanConfig, JsonConfig } from './schema';
+import type { ZpanConfig, JsonConfig, ZpanConfigInit } from './schema';
 import packageJson from '../../package.json';
 
 /**
@@ -12,6 +12,7 @@ export interface CliParseResult {
   init: boolean;
   help: boolean;
   version: boolean;
+  debug: boolean;
   // All config options can be overridden via CLI
   name: string | null;
   port: string | null;
@@ -25,6 +26,20 @@ export interface CliParseResult {
   sessionSecret: string | null;
   sessionName: string | null;
 }
+
+const defaultConfig: ZpanConfig = {
+  name: 'zpan',
+  port: 8090,
+  host: '127.0.0.1',
+  baseUrl: '',
+  staticRoot: './',
+  username: 'admin',
+  password: 'admin123',
+  realm: 'ZPan - Protected Area',
+  maxFileSize: 10737418240,
+  sessionSecret: '',
+  sessionName: 'zpan',
+};
 
 /**
  * Parse size string like '10GB', '100MB', '1gb' to bytes
@@ -63,6 +78,7 @@ export function parseArgs(): CliParseResult {
     init: false,
     help: false,
     version: false,
+    debug: false,
     name: null,
     port: null,
     host: null,
@@ -85,6 +101,8 @@ export function parseArgs(): CliParseResult {
       result.init = true;
     } else if (arg === 'start') {
       // start command is default, just skip
+    } else if (arg === '--debug') {
+      result.debug = true;
     } else if (arg === '--version' || arg === '-v') {
       result.version = true;
     } else if (arg === '--help' || arg === '-h') {
@@ -125,7 +143,7 @@ export function parseArgs(): CliParseResult {
     } else if (arg === '--session-name' && next) {
       result.sessionName = next;
       i++;
-    // Backward compatibility for positional arguments
+      // Backward compatibility for positional arguments
     } else if (result.port === null) {
       result.port = arg;
     } else if (result.staticRoot === null) {
@@ -205,6 +223,22 @@ export function loadConfig(
   return config;
 }
 
+export function normalBaseUrl(baseUrl: string): string {
+  if (baseUrl && !baseUrl.startsWith('/')) {
+    baseUrl = '/' + baseUrl;
+  }
+  baseUrl = baseUrl.replace(/\/$/, '');
+  return baseUrl;
+}
+
+export function normalPanConfig(config: ZpanConfigInit): ZpanConfig {
+  return {
+    ...defaultConfig,
+    ...config,
+    baseUrl: normalBaseUrl(config.baseUrl || defaultConfig.baseUrl || ''),
+  }
+}
+
 /**
  * Generate default config file
  */
@@ -215,19 +249,6 @@ export function generateDefaultConfig(outputPath: string): boolean {
     return false;
   }
 
-  const defaultConfig: JsonConfig = {
-    name: 'zpan',
-    port: 8090,
-    host: '127.0.0.1',
-    baseUrl: '',
-    staticRoot: './',
-    username: 'admin',
-    password: 'admin123',
-    realm: 'ZPan - Protected Area',
-    maxFileSize: 10737418240,
-    sessionSecret: '',
-    sessionName: 'zpan',
-  };
 
   try {
     fs.writeFileSync(outputPath, JSON.stringify(defaultConfig, null, 2) + '\n', 'utf-8');
@@ -268,6 +289,7 @@ Config Options:
 Global Options:
   -v, --version               Show version
   -h, --help                  Show help
+  --debug                     Enable debug logging (all zpan:* logs)
 
 Configuration:
   Priority: defaults < config file < command line arguments.

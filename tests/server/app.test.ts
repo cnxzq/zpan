@@ -1,8 +1,10 @@
+import type { ZpanConfig } from '@/index';
 import { createServer } from '../../src/server/app';
 import request from 'supertest';
 
 describe('createServer', () => {
-  const testConfig = {
+  const testConfig:ZpanConfig = {
+    baseUrl:"/pan",
     name: 'test',
     port: 3000,
     host: '127.0.0.1',
@@ -15,6 +17,16 @@ describe('createServer', () => {
     sessionName: 'zpan',
   };
 
+  /**测试静态服务 */
+  it('应返回vue.global.js', async () => {
+    const app = createServer(testConfig);
+
+    // POST with wrong password to API
+    const response = await request(app)
+      .get('/pan/vue.global.js')
+    expect(response.type).toBe('application/javascript');
+  });
+
   it('should create an express app', () => {
     const app = createServer(testConfig);
     expect(app).toBeDefined();
@@ -23,7 +35,7 @@ describe('createServer', () => {
 
   it('should serve index.html when not authenticated (SPA architecture)', async () => {
     const app = createServer(testConfig);
-    const response = await request(app).get('/');
+    const response = await request(app).get(testConfig.baseUrl + '/');
     // In SPA architecture, frontend static files don't require auth
     // Frontend javascript checks auth status and handles redirect client-side
     expect(response.status).toBe(200);
@@ -33,7 +45,8 @@ describe('createServer', () => {
   it('should return 401 for API when not authenticated', async () => {
     const app = createServer(testConfig);
     // API is after auth middleware, so should return 401 Unauthorized
-    const response = await request(app).get('/api/list').query({ dir: '.' });
+    const apiPath = `${testConfig.baseUrl}/api/list`;
+    const response = await request(app).get(apiPath).query({ dir: '.' });
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('Unauthorized');
   });
@@ -64,6 +77,7 @@ describe('auth status API', () => {
 
 describe('full login flow', () => {
   const testConfig = {
+    baseUrl:'',
     name: 'test',
     port: 3000,
     host: '127.0.0.1',
@@ -76,13 +90,13 @@ describe('full login flow', () => {
     sessionName: 'zpan',
   };
 
-  it('should return 200 when GET /login with not logged in', async () => {
+  it('should return 404 when GET /login (no backend route)', async () => {
     const app = createServer(testConfig);
-    const response = await request(app).get('/login');
-    // Not logged in, serve SPA for login
-    expect(response.status).toBe(200);
-    expect(response.type).toBe('text/html');
-    expect(response.text).toContain('ZPan');
+    const baseUrl = testConfig.baseUrl || '';
+    const response = await request(app).get(`${baseUrl}/login`);
+    // /login has no backend route - should return 404
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('Not Found');
   });
 
   it('should complete login with correct credentials via API', async () => {
