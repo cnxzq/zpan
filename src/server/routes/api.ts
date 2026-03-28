@@ -27,16 +27,22 @@ export default function createApiRoutes(config: ZpanConfig): express.Router {
       }
 
       const files = fs.readdirSync(fullPath);
-      const fileInfos: FileInfo[] = files.map(name => {
+      const fileInfos: FileInfo[] = files.reduce((acc, name) => {
         const filePath = path.join(fullPath, name);
-        const stat = fs.statSync(filePath);
-        return {
-          name,
-          size: stat.size,
-          mtimeMs: stat.mtimeMs,
-          isDirectory: stat.isDirectory(),
-        };
-      });
+        try {
+          const stat = fs.statSync(filePath);
+          acc.push({
+            name,
+            size: stat.size,
+            mtimeMs: stat.mtimeMs,
+            isDirectory: stat.isDirectory(),
+          });
+        } catch (error) {
+          // Skip files/directories we don't have permission to access
+          console.debug(`Skip inaccessible: ${filePath} (${(error as Error).message})`);
+        }
+        return acc;
+      }, [] as FileInfo[]);
 
       // Sort: directories first, then files alphabetically
       fileInfos.sort((a, b) => {
