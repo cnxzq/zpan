@@ -13,7 +13,10 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "typeRoots": ["./src/types", "./node_modules/@types"],
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
