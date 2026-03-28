@@ -44,18 +44,23 @@ export function createServer(configInit: ZpanConfigInit): express.Express {
   appDebug('trust proxy enabled: %o', app.get('trust proxy'));
 
   // Cookie session must come before authentication
-  const cookieSecure = process.env.NODE_ENV === 'production';
-  appDebug('cookie session secure: %o', cookieSecure);
-  app.use(cookieSession({
-    name: config.sessionName,
-    keys: [config.sessionSecret],
-    httpOnly: true,
-    sameSite: 'lax',
-    // Auto-detect secure based on trust proxy
-    // When behind proxy, app.set('trust proxy', 1) makes this work correctly
-    secure: cookieSecure,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  }));
+  // When running behind reverse proxy (Nginx, etc.), trust proxy is enabled
+  // The 'secure' setting is determined dynamically by Express based on X-Forwarded-Proto
+  // This works correctly for both HTTP and HTTPS regardless of NODE_ENV
+  appDebug('cookie session secure: dynamic (based on X-Forwarded-Proto)');
+  app.use((req, res, next) => {
+    // Determine if this request is secure dynamically
+    // req.secure is automatically set correctly when trust proxy is enabled
+    const secureCookie = req.secure;
+    cookieSession({
+      name: config.sessionName,
+      keys: [config.sessionSecret],
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: secureCookie,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    })(req, res, next);
+  });
 
   // Parse JSON
   app.use(express.json());

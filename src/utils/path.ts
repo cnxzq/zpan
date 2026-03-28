@@ -17,6 +17,13 @@ export function getPublicPath(): string {
 
   // Try up to 10 levels deep to avoid infinite loop
   for (let i = 0; i < 10; i++) {
+    // First look for dist/public (built version with version injected)
+    const distCandidate = path.join(currentDir, 'dist', 'public');
+    const distIndexPath = path.join(distCandidate, 'index.html');
+    if (fs.existsSync(distIndexPath)) {
+      return distCandidate;
+    }
+    // Then look for original public (development mode)
     const candidate = path.join(currentDir, 'public');
     const indexPath = path.join(candidate, 'index.html');
     if (fs.existsSync(indexPath)) {
@@ -30,7 +37,14 @@ export function getPublicPath(): string {
     currentDir = parentDir;
   }
 
-  // If still not found, fall back to cwd/public
+  // If still not found, try cwd/dist/public first
+  const distFallback = path.join(process.cwd(), 'dist', 'public');
+  const distIndexPath = path.join(distFallback, 'index.html');
+  if (fs.existsSync(distIndexPath)) {
+    return distFallback;
+  }
+
+  // Fall back to cwd/public
   const fallback = path.join(process.cwd(), 'public');
   return fallback;
 }
