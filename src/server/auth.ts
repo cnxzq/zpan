@@ -14,7 +14,7 @@ const authDebug = debug('zpan:auth');
  */
 export function authMiddleware(config: ZpanConfig) {
   const apiPrefix = config.baseUrl ? `${config.baseUrl}/api/` : '/api/';
-  const authApiPrefix = `${apiPrefix}/auth/`;
+  const authApiPrefix = `${apiPrefix}auth/`;
   authDebug('apiPrefix: %s, authApiPrefix: %s', apiPrefix, authApiPrefix);
 
   return (req: Request, res: Response, next: NextFunction): void => {
