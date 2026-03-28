@@ -24,7 +24,11 @@
 | `${basePath}/api/auth/logout` | GET | 是 | 退出登录 |
 | `${basePath}/api/list` | GET | 是 | 列出目录文件 |
 | `${basePath}/api/upload` | POST | 是 | 上传文件 |
+<<<<<<< HEAD
 | `${basePath}/api/thumbnail` | GET | 是 | 获取图片缩略图 |
+=======
+| `${basePath}/thumbnail` | GET | 是 | 获取图片缩略图 |
+>>>>>>> c197311a6221821dd48413ce6a4b6236329404c9
 | `${basePath}/raw/*` | GET | 是 | 直接访问用户文件 |
 | `*` | 任意 | - | 404 返回 JSON 错误 |
 
@@ -56,7 +60,11 @@ src/server/app.ts:
 
 6. **后端 API（需要认证）
    - `app.use(${basePath}/api, createApiRoutes(config))`
+<<<<<<< HEAD
    - `app.use(${basePath}/api, thumbnailRouter)`
+=======
+   - `app.use(basePath, thumbnailRouter)`
+>>>>>>> c197311a6221821dd48413ce6a4b6236329404c9
    - `app.use(basePath, uploadRouter)`
 
 7. **用户文件静态服务（需要认证）
@@ -186,7 +194,11 @@ Form 表单参数：
 
 ### 缩略图（需要认证）
 
+<<<<<<< HEAD
 #### `GET ${basePath}/api/thumbnail`
+=======
+#### `GET ${basePath}/thumbnail`
+>>>>>>> c197311a6221821dd48413ce6a4b6236329404c9
 
 查询参数：`?path=/path/to/image.jpg`
 
@@ -221,10 +233,18 @@ Form 表单参数：
 | 4 | 登录路由 | 无 |
 | 5 | 公开配置 | 无 |
 | 6 | **Auth 认证检查** | - |
+<<<<<<< HEAD
 | 7 | API 所有后端 API (包括 /api/thumbnail) | 需要 |
 | 8 | 上传 | 需要 |
 | 9 | 用户文件 | 需要 |
 | 10 | 404 | - |
+=======
+| 7 | API 所有后端 API | 需要 |
+| 8 | 缩略图 | 需要 |
+| 9 | 上传 | 需要 |
+| 10 | 用户文件 | 需要 |
+| 11 | 404 | - |
+>>>>>>> c197311a6221821dd48413ce6a4b6236329404c9
 
 **关键点：** 认证中间件在静态文件之后注册，这样未登录用户也可以正常访问登录页面和前端资源。
 
@@ -239,8 +259,13 @@ Form 表单参数：
 /api/config         → 公开配置
 /api/auth/login    → 登录 API
 /api/list          → 列出目录
+<<<<<<< HEAD
 /api/thumbnail?path=photo.jpg → 缩略图
 /raw/photo.jpg    → 用户文件
+=======
+/raw/photo.jpg    → 用户文件
+/thumbnail?path=photo.jpg → 缩略图
+>>>>>>> c197311a6221821dd48413ce6a4b6236329404c9
 ```
 
 ### 配置 baseUrl = "/zpan"：
@@ -251,8 +276,13 @@ Form 表单参数：
 /zpan/api/config   → 公开配置
 /zpan/api/auth/login → 登录 API
 /zpan/api/list     → 列出目录
+<<<<<<< HEAD
 /zpan/api/thumbnail?path=photo.jpg → 缩略图
 /zpan/raw/photo.jpg → 用户文件
+=======
+/zpan/raw/photo.jpg → 用户文件
+/zpan/thumbnail?path=photo.jpg → 缩略图
+>>>>>>> c197311a6221821dd48413ce6a4b6236329404c9
 ```
 
 ---
