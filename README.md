@@ -153,8 +153,8 @@ npm run dev
 
 ```bash
 # 克隆项目
-git clone https://github.com/zhuqiang626/ark-pan.git
-cd ark-pan
+git clone https://github.com/cnxzq/zpan.git
+cd zpan
 
 # 安装依赖
 pnpm install
