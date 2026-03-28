@@ -1,0 +1,807 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ZPan API",
+    "description": "ZPan - 简单开源的网盘服务 API 文档",
+    "version": "1.2.0"
+  },
+  "servers": [
+    {
+      "url": "{baseUrl}",
+      "variables": {
+        "baseUrl": {
+          "default": "",
+          "description": "Base URL path when deployed under subpath"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "认证相关接口"
+    },
+    {
+      "name": "Files",
+      "description": "文件浏览和下载接口"
+    },
+    {
+      "name": "Upload",
+      "description": "文件上传接口"
+    },
+    {
+      "name": "Admin",
+      "description": "管理员用户管理接口"
+    },
+    {
+      "name": "Config",
+      "description": "配置获取接口"
+    }
+  ],
+  "paths": {
+    "/api/auth/status": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "获取当前登录状态",
+        "description": "检查当前用户是否已登录，并返回用户信息",
+        "responses": {
+          "200": {
+            "description": "登录状态信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "loggedIn": {
+                      "type": "boolean",
+                      "description": "是否已登录"
+                    },
+                    "username": {
+                      "type": "string",
+                      "description": "用户名",
+                      "nullable": true
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": ["admin", "user"],
+                      "description": "用户角色",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "用户登录",
+        "description": "使用用户名密码进行登录认证",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "用户名"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "密码"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "登录是否成功"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": ["admin", "user"],
+                      "description": "用户角色（成功时返回）"
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "错误信息（失败时返回）"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "用户登出",
+        "description": "清除当前会话，退出登录",
+        "responses": {
+          "200": {
+            "description": "登出成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "登出是否成功"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "获取公共配置",
+        "description": "获取前端需要的公共配置（实例名称、base URL）",
+        "responses": {
+          "200": {
+            "description": "配置信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "网盘实例名称"
+                    },
+                    "baseUrl": {
+                      "type": "string",
+                      "description": "基础 URL 路径"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list": {
+      "get": {
+        "tags": ["Files"],
+        "summary": "列出目录内容",
+        "description": "获取指定目录下的文件和文件夹列表",
+        "parameters": [
+          {
+            "name": "dir",
+            "in": "query",
+            "description": "要列出的目录路径（相对于用户根目录）",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "文件列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileInfo"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 路径越权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Forbidden: Path traversal detected"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "目录不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Directory not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不是目录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Not a directory"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/thumbnail": {
+      "get": {
+        "tags": ["Files"],
+        "summary": "获取图片缩略图",
+        "description": "生成并返回指定图片的 200x200 缩略图（缓存）",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "description": "图片路径（相对于管理员根目录）",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "缩略图图片数据 (image/webp)",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效请求"
+          },
+          "404": {
+            "description": "文件不存在"
+          },
+          "500": {
+            "description": "生成缩略图失败"
+          }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "tags": ["Upload"],
+        "summary": "上传文件",
+        "description": "上传多个文件到指定目录",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["dir"],
+                "properties": {
+                  "dir": {
+                    "type": "string",
+                    "description": "上传目标目录（相对于用户根目录）",
+                    "default": ""
+                  },
+                  "file": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "要上传的文件数组"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "上传成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "files": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "上传成功的文件名列表"
+                    },
+                    "currentDir": {
+                      "type": "string",
+                      "description": "当前上传目录"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "403": {
+            "description": "无写权限或路径越权"
+          }
+        }
+      }
+    },
+    "/raw/{filePath}": {
+      "get": {
+        "tags": ["Files"],
+        "summary": "下载原始文件",
+        "description": "下载指定文件的原始内容",
+        "parameters": [
+          {
+            "name": "filePath",
+            "in": "path",
+            "description": "文件路径（相对于用户根目录）",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "文件内容",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "禁止访问 - 路径越权"
+          },
+          "404": {
+            "description": "文件不存在"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "获取用户列表",
+        "description": "获取所有用户列表（不返回密码）",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserPublic"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "403": {
+            "description": "不是管理员"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin"],
+        "summary": "创建新用户",
+        "description": "创建新用户（需要管理员权限）",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/UserPublic"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数错误或用户名已存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "403": {
+            "description": "不是管理员"
+          },
+          "500": {
+            "description": "保存配置失败"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{username}": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "获取单个用户信息",
+        "description": "获取指定用户信息（不返回密码）",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPublic"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用户不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Admin"],
+        "summary": "更新用户信息",
+        "description": "更新指定用户信息（需要管理员权限）",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/UserPublic"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用户不存在"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "删除用户",
+        "description": "删除指定用户（需要管理员权限）",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不能删除当前登录用户或最后一个管理员",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用户不存在"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FileInfo": {
+        "type": "object",
+        "description": "文件信息",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "文件名"
+          },
+          "size": {
+            "type": "integer",
+            "description": "文件大小（字节）"
+          },
+          "mtimeMs": {
+            "type": "integer",
+            "description": "修改时间戳（毫秒）"
+          },
+          "isDirectory": {
+            "type": "boolean",
+            "description": "是否是目录"
+          }
+        }
+      },
+      "UserPublic": {
+        "type": "object",
+        "description": "公开用户信息（不包含密码）",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "user"],
+            "description": "用户角色"
+          },
+          "permission": {
+            "type": "string",
+            "enum": ["read", "write"],
+            "description": "权限：只读/读写"
+          },
+          "rootDir": {
+            "type": "string",
+            "description": "用户根目录（相对于管理员根目录）"
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "description": "创建用户请求",
+        "required": ["username", "password", "role", "permission", "rootDir"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名"
+          },
+          "password": {
+            "type": "string",
+            "description": "密码"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "user"],
+            "description": "用户角色"
+          },
+          "permission": {
+            "type": "string",
+            "enum": ["read", "write"],
+            "description": "权限"
+          },
+          "rootDir": {
+            "type": "string",
+            "description": "用户根目录（相对于管理员根目录）"
+          }
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "description": "更新用户请求（留空字段保持原值）",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "新密码（留空保持原密码）",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "user"],
+            "description": "用户角色",
+            "nullable": true
+          },
+          "permission": {
+            "type": "string",
+            "enum": ["read", "write"],
+            "description": "权限",
+            "nullable": true
+          },
+          "rootDir": {
+            "type": "string",
+            "description": "用户根目录",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "name": "session",
+        "in": "cookie",
+        "description": "会话 cookie 由登录设置"
+      }
+    }
+  }
+}

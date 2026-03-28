@@ -66,3 +66,56 @@ export function authMiddleware(config: ZpanConfig) {
     next();
   };
 }
+
+/**
+ * Attach user info to request object from session
+ */
+export function attachUserMiddleware(config: ZpanConfig) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.session?.loggedIn || !req.session?.username || !config.users) {
+      next();
+      return;
+    }
+
+    const user = config.users.find(u => u.username === req.session!.username);
+    if (user) {
+      req.user = {
+        username: user.username,
+        role: user.role,
+        permission: user.permission,
+        rootDir: user.rootDir,
+      };
+    }
+    next();
+  };
+}
+
+/**
+ * Require admin permission middleware
+ */
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized', message: '需要登录' });
+    return;
+  }
+  if (req.user.role !== 'admin') {
+    res.status(403).json({ error: 'Forbidden', message: '需要管理员权限' });
+    return;
+  }
+  next();
+}
+
+/**
+ * Require write permission middleware
+ */
+export function requireWritePermission(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized', message: '需要登录' });
+    return;
+  }
+  if (req.user.permission !== 'write') {
+    res.status(403).json({ error: 'Forbidden', message: '需要读写权限' });
+    return;
+  }
+  next();
+}

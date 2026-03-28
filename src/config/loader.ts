@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import type { ZpanConfig, JsonConfig, ZpanConfigInit } from './schema';
+import type { ZpanConfig, JsonConfig, ZpanConfigInit, User } from './schema';
 import packageJson from '../../package.json';
 
 /**
@@ -39,6 +39,8 @@ const defaultConfig: ZpanConfig = {
   maxFileSize: 10737418240,
   sessionSecret: '',
   sessionName: 'zpan',
+  users: undefined,
+  configPath: undefined,
 };
 
 /**
@@ -209,6 +211,8 @@ export function loadConfig(
       (jsonConfig?.maxFileSize || 10 * 1024 * 1024 * 1024), // 10GB
     sessionSecret: parsedArgs.sessionSecret || jsonConfig?.sessionSecret || crypto.randomBytes(32).toString('hex'),
     sessionName: parsedArgs.sessionName || jsonConfig?.sessionName || 'zpan',
+    users: jsonConfig?.users,
+    configPath: jsonConfig?.configPath || (parsedArgs.configPath ? path.resolve(process.cwd(), parsedArgs.configPath) : undefined),
   };
 
   // Resolve staticRoot to absolute path
@@ -220,7 +224,56 @@ export function loadConfig(
   }
   config.baseUrl = config.baseUrl.replace(/\/$/, '');
 
+  // Backward compatibility: if no users config, create admin user from legacy username/password
+  if (!config.users || config.users.length === 0) {
+    config.users = [{
+      username: config.username,
+      password: config.password,
+      role: 'admin',
+      permission: 'write',
+      rootDir: './',
+    }];
+  }
+
+  // Normalize all user rootDir paths and ensure at least one admin exists
+  config.users = normalizeAndValidateUsers(config.users);
+
   return config;
+}
+
+/**
+ * Normalize user root directories and ensure at least one admin exists
+ */
+export function normalizeAndValidateUsers(users: User[]): User[] {
+  // Normalize all user rootDir paths (ensure they are relative, don't start with /)
+  const normalized = users.map(user => ({
+    ...user,
+    rootDir: normalizeUserRootDir(user.rootDir),
+  }));
+
+  // Ensure at least one admin exists
+  const adminCount = normalized.filter(u => u.role === 'admin').length;
+  if (adminCount === 0 && normalized.length > 0) {
+    // If no admin, promote first user to admin
+    normalized[0].role = 'admin';
+    normalized[0].permission = 'write';
+  }
+
+  return normalized;
+}
+
+/**
+ * Normalize user root directory to be relative
+ */
+function normalizeUserRootDir(rootDir: string): string {
+  // Remove leading slash to make it relative
+  let normalized = rootDir.replace(/^\/+/, '');
+  // Normalize path separators
+  normalized = normalized.split('\\').join('/');
+  // Remove trailing slash
+  normalized = normalized.replace(/\/+$/, '');
+  // If empty, default to ./
+  return normalized || '.';
 }
 
 export function normalBaseUrl(baseUrl: string): string {
@@ -232,11 +285,27 @@ export function normalBaseUrl(baseUrl: string): string {
 }
 
 export function normalPanConfig(config: ZpanConfigInit): ZpanConfig {
-  return {
+  const result: ZpanConfig = {
     ...defaultConfig,
     ...config,
     baseUrl: normalBaseUrl(config.baseUrl || defaultConfig.baseUrl || ''),
+  };
+
+  // Backward compatibility: if no users config, create admin user from legacy username/password
+  if (!result.users || result.users.length === 0) {
+    result.users = [{
+      username: result.username,
+      password: result.password,
+      role: 'admin',
+      permission: 'write',
+      rootDir: './',
+    }];
   }
+
+  // Normalize all user rootDir paths and ensure at least one admin exists
+  result.users = normalizeAndValidateUsers(result.users);
+
+  return result;
 }
 
 /**
@@ -311,4 +380,35 @@ Examples:
  */
 export function printVersion(): void {
   console.log(`zpan v${packageJson.version}`);
+}
+
+/**
+ * Save configuration back to file
+ */
+export function saveConfig(config: ZpanConfig): boolean {
+  if (!config.configPath) {
+    console.error('Error: Cannot save config: configPath not set');
+    return false;
+  }
+
+  try {
+    // Create a copy without internal fields for serialization
+    const configToSave: JsonConfig = { ...config };
+    // Remove absolute staticRoot (we resolve it on load)
+    delete configToSave.staticRoot;
+    // When saving, we still keep legacy username/password for backward compatibility
+    // Take the first admin as legacy credentials
+    const firstAdmin = config.users?.find(u => u.role === 'admin');
+    if (firstAdmin) {
+      configToSave.username = firstAdmin.username;
+      configToSave.password = firstAdmin.password;
+    }
+
+    const content = JSON.stringify(configToSave, null, 2) + '\n';
+    fs.writeFileSync(config.configPath, content, 'utf-8');
+    return true;
+  } catch (error) {
+    console.error(`Error: Failed to save config: ${(error as Error).message}`);
+    return false;
+  }
 }

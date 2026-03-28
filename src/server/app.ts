@@ -1,12 +1,14 @@
 import express from 'express';
 import cookieSession from 'cookie-session';
 import path from 'path';
-import { authMiddleware } from './auth';
-import { getIndexHtmlPath } from '@/utils/path';
+import fs from 'fs';
+import { authMiddleware, attachUserMiddleware } from './auth';
+import { getIndexHtmlPath, resolveAndValidatePath } from '@/utils/path';
 import createLoginRoutes from './routes/login';
 import createUploadRoutes from './routes/upload';
 import createThumbnailRoutes from './routes/thumbnail';
 import createApiRoutes from './routes/api';
+import createAdminRoutes from './routes/admin';
 import type { ZpanConfig, ZpanConfigInit } from '@/config/schema';
 import debug from 'debug'
 import { normalPanConfig } from '@/config/loader';
@@ -98,34 +100,64 @@ export function createServer(configInit: ZpanConfigInit): express.Express {
   // Authentication middleware - after static files, before APIs/user files
   app.use(authMiddleware(config));
 
+  // Attach user info to request from session
+  app.use(attachUserMiddleware(config));
+
   // ========== Backend API ==========
   // All backend APIs are under /api/** - requires authentication
-  app.use(`${basePath}/api`, createApiRoutes(config));
-  appDebug('mounted API router at: %s/api', basePath);
+  const apiRouter = createApiRoutes(config);
+  app.use(basePath, apiRouter);
+  appDebug('mounted API router at: %s', basePath);
 
   // Thumbnail routes - requires authentication
   const thumbnailRouter = createThumbnailRoutes(config);
-  app.use(`${basePath}/api`, thumbnailRouter);
-  appDebug('mounted thumbnail router at: %s/api', basePath);
+  app.use(basePath, thumbnailRouter);
+  appDebug('mounted thumbnail router at: %s', basePath);
 
   // Upload routes - requires authentication
   const uploadRouter = createUploadRoutes(config);
   app.use(basePath, uploadRouter);
   appDebug('mounted upload router at: %s', basePath);
 
+  // Admin user management routes - requires authentication and admin permission
+  const adminRouter = createAdminRoutes(config);
+  app.use(basePath, adminRouter);
+  appDebug('mounted admin router at: %s', basePath);
+
   // ========== User files static serving ==========
-  // Serve user-owned files directly from configured staticRoot directory
+  // Serve user-owned files through dynamic route with permission checking
   // Requires authentication - all user files are protected
   // Direct file downloads work normally - frontend only handles directory browsing
-  // Disable cache to ensure newly uploaded files are visible immediately
-  const userStaticMiddleware = express.static(config.staticRoot, {
-    etag: false,
-    cacheControl: false,
-    maxAge: 0,
-    index: false,
+  app.get(`${basePath}/raw/*`, (req: express.Request, res: express.Response) => {
+    if (!(req as any).user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Extract the requested path after /raw/
+    const rawPath = (req.params as any)[0];
+    const userRootDir = (req as any).user.rootDir;
+
+    // Validate the requested path is within user's root directory
+    const validatedPath = resolveAndValidatePath(config.staticRoot, userRootDir, rawPath);
+    if (!validatedPath) {
+      return res.status(403).json({ error: 'Forbidden: Access denied' });
+    }
+
+    if (!fs.existsSync(validatedPath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    // Disable cache to ensure newly uploaded files are visible immediately
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Send the file
+    res.sendFile(validatedPath, {
+      etag: false,
+    });
   });
-  app.use(`${basePath}/raw`, userStaticMiddleware);
-  appDebug('mounted user files static at: %s/raw', basePath);
+  appDebug('mounted user files dynamic route at: %s/raw/*', basePath);
   appDebug('user files root: %s', config.staticRoot);
 
   // 404 handler - any non-existing request returns 404

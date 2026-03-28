@@ -291,7 +291,189 @@ describe('normalPanConfig', () => {
       sessionSecret: 'customsecret',
       sessionName: 'customsession',
     };
+    const expected = {
+      ...input,
+      users: [{
+        username: 'customuser',
+        password: 'custompass',
+        role: 'admin',
+        permission: 'write',
+        rootDir: '.',
+      }],
+      configPath: undefined,
+    };
     const config = normalPanConfig(input);
-    expect(config).toEqual(input);
+    expect(config).toEqual(expected);
+  });
+});
+
+describe('config loader - multi-user support', () => {
+  const emptyParsedArgs = {
+    name: null,
+    port: null,
+    host: null,
+    staticRoot: null,
+    username: null,
+    password: null,
+    realm: null,
+    maxFileSize: null,
+    sessionSecret: null,
+    sessionName: null,
+    configPath: null,
+    init: false,
+    help: false,
+    version: false,
+  };
+
+  it('should create admin user from legacy username/password when users is empty', () => {
+    const jsonConfig: JsonConfig = {
+      username: 'legacyadmin',
+      password: 'legacypass',
+    };
+    const config = loadConfig(emptyParsedArgs, jsonConfig);
+
+    expect(config.users).toBeDefined();
+    expect(config.users?.length).toBe(1);
+    expect(config.users?.[0].username).toBe('legacyadmin');
+    expect(config.users?.[0].password).toBe('legacypass');
+    expect(config.users?.[0].role).toBe('admin');
+    expect(config.users?.[0].permission).toBe('write');
+    expect(config.users?.[0].rootDir).toBe('.');
+  });
+
+  it('should keep existing users when provided', () => {
+    const jsonConfig: JsonConfig = {
+      users: [
+        {
+          username: 'admin',
+          password: 'adminpass',
+          role: 'admin',
+          permission: 'write',
+          rootDir: '.',
+        },
+        {
+          username: 'user1',
+          password: 'user1pass',
+          role: 'user',
+          permission: 'read',
+          rootDir: 'users/user1',
+        },
+      ],
+    };
+    const config = loadConfig(emptyParsedArgs, jsonConfig);
+
+    expect(config.users).toBeDefined();
+    expect(config.users?.length).toBe(2);
+
+    const admin = config.users?.find(u => u.username === 'admin');
+    expect(admin).toBeDefined();
+    expect(admin?.role).toBe('admin');
+    expect(admin?.permission).toBe('write');
+
+    const user1 = config.users?.find(u => u.username === 'user1');
+    expect(user1).toBeDefined();
+    expect(user1?.role).toBe('user');
+    expect(user1?.permission).toBe('read');
+    expect(user1?.rootDir).toBe('users/user1');
+  });
+
+  it('should normalize user rootDir - remove leading slash', () => {
+    const jsonConfig: JsonConfig = {
+      users: [
+        {
+          username: 'user1',
+          password: 'pass',
+          role: 'user',
+          permission: 'read',
+          rootDir: '/users/user1',
+        },
+      ],
+    };
+    const config = loadConfig(emptyParsedArgs, jsonConfig);
+
+    expect(config.users?.[0].rootDir).toBe('users/user1');
+  });
+
+  it('should normalize user rootDir - remove trailing slash', () => {
+    const jsonConfig: JsonConfig = {
+      users: [
+        {
+          username: 'user1',
+          password: 'pass',
+          role: 'user',
+          permission: 'read',
+          rootDir: 'users/user1/',
+        },
+      ],
+    };
+    const config = loadConfig(emptyParsedArgs, jsonConfig);
+
+    expect(config.users?.[0].rootDir).toBe('users/user1');
+  });
+
+  it('should normalize empty rootDir to dot', () => {
+    const jsonConfig: JsonConfig = {
+      users: [
+        {
+          username: 'user1',
+          password: 'pass',
+          role: 'user',
+          permission: 'read',
+          rootDir: '',
+        },
+      ],
+    };
+    const config = loadConfig(emptyParsedArgs, jsonConfig);
+
+    expect(config.users?.[0].rootDir).toBe('.');
+  });
+
+  it('should promote first user to admin if no admin exists', () => {
+    const jsonConfig: JsonConfig = {
+      users: [
+        {
+          username: 'user1',
+          password: 'pass',
+          role: 'user',
+          permission: 'read',
+          rootDir: 'user1',
+        },
+        {
+          username: 'user2',
+          password: 'pass',
+          role: 'user',
+          permission: 'write',
+          rootDir: 'user2',
+        },
+      ],
+    };
+    const config = loadConfig(emptyParsedArgs, jsonConfig);
+
+    expect(config.users?.[0].role).toBe('admin');
+    expect(config.users?.[0].permission).toBe('write');
+  });
+
+  it('should keep existing admin when present', () => {
+    const jsonConfig: JsonConfig = {
+      users: [
+        {
+          username: 'user1',
+          password: 'pass',
+          role: 'user',
+          permission: 'read',
+          rootDir: 'user1',
+        },
+        {
+          username: 'admin',
+          password: 'pass',
+          role: 'admin',
+          permission: 'write',
+          rootDir: '.',
+        },
+      ],
+    };
+    const config = loadConfig(emptyParsedArgs, jsonConfig);
+
+    expect(config.users?.[1].role).toBe('admin');
   });
 });

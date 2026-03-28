@@ -5,1097 +5,86 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZPan v__VERSION__</title>
-  <script src="./vue.global.js"></script>
-  <script src="./vue-router.global.js"></script>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+  <!-- <script src="./vue.global.js"></script>
+  <script src="./vue-router.global.js"></script> -->
+  <link rel="stylesheet" href="./styles.css">
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: #f5f5f5;
-      min-height: 100vh;
-    }
+  <script type="importmap">
+  {
+    "imports": {
+      "vue": "./lib/vue.esm-browser.js",
+      "vue-router": "./lib/vue-router.esm-browser.js",
+      "pinia": "./lib/pinia.esm-browser.js",
+      "@vue/devtools-api": "./lib/vue-devtools-api.esm-browser.js",
+      "axios": "./lib/axios.js",
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
+      "@/router": "./router/index.js",
+      "@/store": "./store/index.js",
+      "@/store/auth": "./store/auth.js",
+      "@/store/app": "./store/app.js",
+      "@/store/upload": "./store/upload.js",
+      "@/api/client": "./api/client.js",
+      "@/api/auth": "./api/auth.js",
+      "@/api/config": "./api/config.js",
+      "@/api/upload": "./api/upload.js",
+      "@/components/breadcrumbs": "./components/breadcrumbs.js",
+      "@/components/app-header": "./components/app-header.js",
+      "@/components/upload-modal": "./components/upload-modal.js",
+      "@/components/login-modal": "./components/login-modal.js",
+      "@/views/user-management-page": "./views/user-management-page.js",
+      "@/views/file-browser": "./views/file-browser.js",
+      "@/util": "./util/index.js",
+      "@/utils": "./utils/index.js"
     }
-
-    .header {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .header h1 {
-      font-size: 24px;
-      color: #333;
-      margin-bottom: 15px;
-    }
-
-    .toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .breadcrumbs {
-      color: #666;
-      font-size: 14px;
-    }
-
-    .breadcrumbs a {
-      color: #007bff;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .breadcrumbs a:hover {
-      text-decoration: underline;
-    }
-
-    .actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .layout-toggle button {
-      padding: 8px 16px;
-      border: 1px solid #ddd;
-      background: #f5f5f5;
-      cursor: pointer;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .layout-toggle button.active {
-      background: #007bff;
-      color: white;
-      border-color: #007bff;
-    }
-
-    .upload-btn {
-      display: inline-block;
-      padding: 8px 16px;
-      background: #28a745;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-      border: none;
-    }
-
-    .upload-btn:hover {
-      background: #218838;
-    }
-
-    .logout-btn {
-      display: inline-block;
-      padding: 8px 16px;
-      background: #dc3545;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-      border: none;
-    }
-
-    .logout-btn:hover {
-      background: #c82333;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 20px;
-    }
-
-    .modal {
-      background: white;
-      border-radius: 8px;
-      padding: 30px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .modal h2 {
-      margin: 0 0 20px 0;
-      font-size: 20px;
-      text-align: center;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 6px;
-      color: #555;
-      font-size: 14px;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .form-group input:focus {
-      outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-    }
-
-    .error-text {
-      color: #dc3545;
-      font-size: 14px;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .modal-actions button {
-      flex: 1;
-      padding: 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-      border: none;
-    }
-
-    .btn-cancel {
-      background: #f5f5f5;
-      color: #333;
-    }
-
-    .btn-cancel:hover {
-      background: #e8e8e8;
-    }
-
-    .btn-primary {
-      background: #007bff;
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: #0056b3;
-    }
-
-    .btn-primary:disabled {
-      background: #66b0ff;
-      cursor: not-allowed;
-    }
-
-    /* Upload file list */
-    .upload-file-list {
-      margin-bottom: 16px;
-    }
-
-    .upload-file-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px;
-      background: #f5f5f5;
-      border-radius: 4px;
-      margin-bottom: 8px;
-    }
-
-    .upload-file-item-name {
-      font-size: 14px;
-      word-break: break-all;
-    }
-
-    .upload-file-item-remove {
-      color: #dc3545;
-      cursor: pointer;
-      font-size: 18px;
-      line-height: 1;
-      padding: 0 4px;
-    }
-
-    .upload-file-select {
-      border: 2px dashed #ddd;
-      border-radius: 4px;
-      padding: 20px;
-      text-align: center;
-      color: #999;
-      margin-bottom: 16px;
-      cursor: pointer;
-    }
-
-    .upload-file-select:hover {
-      border-color: #007bff;
-      color: #007bff;
-    }
-
-    .upload-file-select input {
-      display: none;
-    }
-
-    .upload-success {
-      text-align: center;
-      color: #28a745;
-      padding: 20px;
-    }
-
-    /* List Layout */
-    .file-list.list {
-      display: block;
-      background: white;
-      border-radius: 8px;
-      padding: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .file-list.list .file-item {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-    }
-
-    .file-list.list .file-item:last-child {
-      border-bottom: none;
-    }
-
-    .file-list.list .file-item:hover {
-      background: #fafafa;
-    }
-
-    .file-list.list .icon {
-      width: 32px;
-      margin-right: 12px;
-      font-size: 20px;
-    }
-
-    .file-list.list .name {
-      flex: 1;
-    }
-
-    .file-list.list .name a {
-      color: #333;
-      text-decoration: none;
-    }
-
-    .file-list.list .size {
-      color: #999;
-      font-size: 14px;
-      width: 80px;
-      text-align: right;
-    }
-
-    .file-list.list .date {
-      color: #999;
-      font-size: 14px;
-      width: 180px;
-      text-align: right;
-    }
-
-    /* Grid Layout */
-    .file-list.grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 16px;
-    }
-
-    .file-list.grid .file-item {
-      background: white;
-      border-radius: 8px;
-      border: 1px solid #eee;
-      overflow: hidden;
-      transition: box-shadow 0.2s;
-    }
-
-    .file-list.grid .file-item:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .file-list.grid .thumbnail {
-      width: 100%;
-      height: 160px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fafafa;
-      overflow: hidden;
-    }
-
-    .file-list.grid .thumbnail img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-    .file-list.grid .thumbnail .folder-icon {
-      font-size: 48px;
-      color: #bbb;
-    }
-
-    .file-list.grid .file-info {
-      padding: 10px;
-      text-align: center;
-    }
-
-    .file-list.grid .file-info .name {
-      word-break: break-all;
-      font-size: 13px;
-      color: #333;
-      line-height: 1.4;
-    }
-
-    .file-list.grid .file-info .size {
-      font-size: 12px;
-      color: #999;
-      margin-top: 4px;
-    }
-
-    .file-item a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .loading,
-    .error,
-    .empty {
-      text-align: center;
-      padding: 40px;
-      color: #999;
-      background: white;
-      border-radius: 8px;
-    }
-
-    .error {
-      color: #dc3545;
-    }
-
-    /* Not logged in */
-    .not-logged-in {
-      text-align: center;
-      padding: 60px 20px;
-      color: #666;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    @media (max-width: 600px) {
-      .file-list.grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 10px;
-      }
-
-      .file-list.grid .thumbnail {
-        height: 120px;
-      }
-    }
-  </style>
+  }
+  </script>
 </head>
 
 <body>
   <div id="app"></div>
+  <script type="module">
+    import { createApp, defineComponent, defineAsyncComponent, onMounted, computed } from 'vue';
+    import * as VueRouter from 'vue-router';
+    import { createPinia } from 'pinia';
+    import { router } from '@/router'
+    import { useAuthStore } from '@/store/auth';
+    import { useAppStore } from '@/store/app';
+    import { useUploadStore } from '@/store/upload';
+    import AppHeader from '@/components/app-header';
+    import UploadModal from '@/components/upload-modal';
 
-  <script>
-    const { createApp, defineComponent, ref, onMounted, computed, watch } = Vue;
-    const { createRouter, createWebHistory, useRoute, useRouter } = VueRouter;
-    const htmlBaseUrl = location.pathname.split('/').slice(0, -1).join('/')
+    const { useRoute, useRouter } = VueRouter;
 
-    // 工具函数 - 格式化文件大小
-    function formatSize(bytes) {
-      if (bytes === 0) return '0 B';
-      const k = 1024;
-      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-    }
-
-    // 工具函数 - 格式化日期
-    function formatDate(timestamp) {
-      return new Date(timestamp).toLocaleString();
-    }
-
-    // 工具函数 - 判断是否是图片
-    function isImage(filename) {
-      const ext = filename.split('.').pop()?.toLowerCase();
-      return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
-    }
-
-    // 组件 - 登录弹窗
-    const LoginModal = defineComponent({
-      name: 'LoginModal',
-      props: {
-        show: {
-          type: Boolean,
-          default: false,
-        },
-        error: {
-          type: String,
-          default: '',
-        },
-        loading: {
-          type: Boolean,
-          default: false,
-        },
-      },
-      emits: ['close', 'login'],
-      setup(props, { emit }) {
-        const username = ref('');
-        const password = ref('');
-
-        const handleLogin = () => {
-          emit('login', {
-            username: username.value,
-            password: password.value,
-          });
-        };
-
-        const handleClose = () => {
-          emit('close');
-        };
-
-        return {
-          username,
-          password,
-          handleLogin,
-          handleClose,
-        };
-      },
-      template: `
-        <div v-if="show" class="modal-overlay">
-          <div class="modal">
-            <h2>登录 ZPan</h2>
-            <div v-if="error" class="error-text">{{ error }}</div>
-            <div class="form-group">
-              <label>用户名</label>
-              <input v-model="username" type="text" placeholder="请输入用户名">
-            </div>
-            <div class="form-group">
-              <label>密码</label>
-              <input v-model="password" type="password" placeholder="请输入密码">
-            </div>
-            <div class="modal-actions">
-              <button class="btn-primary" @click="handleLogin" :disabled="loading">
-                {{ loading ? '登录中...' : '登录' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      `,
-    });
-
-    // 组件 - 上传弹窗
-    const UploadModal = defineComponent({
-      name: 'UploadModal',
-      props: {
-        show: {
-          type: Boolean,
-          default: false,
-        },
-        currentDir: {
-          type: String,
-          default: '',
-        },
-        selectedFiles: {
-          type: Array,
-          default: () => [],
-        },
-        uploading: {
-          type: Boolean,
-          default: false,
-        },
-        error: {
-          type: String,
-          default: '',
-        },
-        success: {
-          type: Boolean,
-          default: false,
-        },
-        uploadedCount: {
-          type: Number,
-          default: 0,
-        },
-      },
-      emits: ['close', 'file-select', 'remove-file', 'upload'],
-      setup(props, { emit }) {
-        const fileInput = ref(null);
-
-        const handleClick = () => {
-          fileInput.value?.click();
-        };
-
-        const handleChange = (e) => {
-          emit('file-select', e);
-        };
-
-        const handleRemove = (index) => {
-          emit('remove-file', index);
-        };
-
-        const handleClose = () => {
-          emit('close');
-        };
-
-        const handleUpload = () => {
-          emit('upload');
-        };
-
-        const handleOverlayClick = (e) => {
-          if (e.target.classList.contains('modal-overlay')) {
-            emit('close');
-          }
-        };
-
-        return {
-          fileInput,
-          handleClick,
-          handleChange,
-          handleRemove,
-          handleClose,
-          handleUpload,
-          handleOverlayClick,
-          formatSize,
-        };
-      },
-      template: `
-        <div v-if="show" class="modal-overlay" @click="handleOverlayClick">
-          <div class="modal">
-            <h2>上传文件</h2>
-            <p v-if="currentDir" style="margin-bottom: 10px; color: #666; font-size: 14px;">
-              当前目录: {{ currentDir || '/' }}
-            </p>
-            <div class="upload-file-select" @click="handleClick">
-              点击选择文件或拖放文件到这里
-              <input ref="fileInput" type="file" multiple @change="handleChange">
-            </div>
-            <div v-if="selectedFiles.length > 0" class="upload-file-list">
-              <div
-                class="upload-file-item"
-                v-for="(file, index) in selectedFiles"
-                :key="index"
-              >
-                <span class="upload-file-item-name">{{ file.name }} ({{ formatSize(file.size) }})</span>
-                <span class="upload-file-item-remove" @click="handleRemove(index)">×</span>
-              </div>
-            </div>
-            <div v-if="success" class="upload-success">
-              ✅ 成功上传 {{ uploadedCount }} 个文件
-            </div>
-            <div v-if="error" class="error-text">{{ error }}</div>
-            <div class="modal-actions">
-              <button class="btn-cancel" @click="handleClose">取消</button>
-              <button class="btn-primary" @click="handleUpload" :disabled="uploading || selectedFiles.length === 0">
-                {{ uploading ? '上传中...' : '开始上传' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      `,
-    });
-
-    // 组件 - 面包屑导航
-    const Breadcrumbs = defineComponent({
-      name: 'Breadcrumbs',
-      props: {
-        path: {
-          type: String,
-          default: '',
-        },
-      },
-      emits: ['navigate'],
-      setup(props, { emit }) {
-        const parts = computed(() => {
-          if (!props.path) return [];
-          return props.path.split('/').filter(p => p);
-        });
-
-        const navigateTo = (index) => {
-          emit('navigate', parts.value.slice(0, index + 1));
-        };
-
-        return {
-          parts,
-          navigateTo,
-        };
-      },
-      template: `
-        <div class="breadcrumbs">
-          <a @click="navigateTo(-1)" href="#">/</a>
-          <template v-for="(part, index) in parts" :key="index">
-            <span> / </span>
-            <a @click="navigateTo(index)" href="#">
-              {{ part }}
-            </a>
-          </template>
-        </div>
-      `,
-    });
-
-    // 组件 - 文件列表项（网格布局）
-    const FileGridItem = defineComponent({
-      name: 'FileGridItem',
-      props: {
-        file: {
-          type: Object,
-          required: true,
-        },
-        currentPath: {
-          type: String,
-          default: '',
-        },
-        baseUrl: {
-          type: String,
-          default: '',
-        },
-      },
-      setup(props) {
-        const isImageFile = (filename) => isImage(filename);
-        const fileLink = (file) => {
-          const path = props.currentPath ? `${props.currentPath}/${file.name}` : file.name;
-          if (file.isDirectory) {
-            return props.baseUrl + '/#/' + encodeURIComponent(path);
-          }
-          return props.baseUrl + '/raw/' + path;
-        };
-        const thumbnailUrl = (file) => {
-          const path = props.currentPath ? `${props.currentPath}/${file.name}` : file.name;
-          return props.baseUrl + '/api/thumbnail?path=' + encodeURIComponent(path);
-        };
-
-        return {
-          isImage: isImageFile,
-          fileLink,
-          thumbnailUrl,
-          formatSize,
-        };
-      },
-      template: `
-        <div class="file-item">
-          <a :href="fileLink(file)">
-            <div class="thumbnail">
-              <div v-if="file.isDirectory" class="folder-icon">📁</div>
-              <img
-                v-else-if="isImage(file.name)"
-                :src="thumbnailUrl(file)"
-                :alt="file.name"
-              >
-              <div v-else class="folder-icon">{{ file.isDirectory ? '📁' : '📄' }}</div>
-            </div>
-            <div class="file-info">
-              <div class="name">{{ file.name }}</div>
-              <div class="size">{{ formatSize(file.size) }}</div>
-            </div>
-          </a>
-        </div>
-      `,
-    });
-
-    // 组件 - 文件列表项（列表布局）
-    const FileListItem = defineComponent({
-      name: 'FileListItem',
-      props: {
-        file: {
-          type: Object,
-          required: true,
-        },
-        currentPath: {
-          type: String,
-          default: '',
-        },
-        baseUrl: {
-          type: String,
-          default: '',
-        },
-      },
-      setup(props) {
-        const fileLink = (file) => {
-          const path = props.currentPath ? `${props.currentPath}/${file.name}` : file.name;
-          if (file.isDirectory) {
-            return props.baseUrl + '/#/' + encodeURIComponent(path);
-          }
-          return props.baseUrl + '/raw/' + path;
-        };
-
-        return {
-          fileLink,
-          formatSize,
-          formatDate,
-        };
-      },
-      template: `
-        <div class="file-item">
-          <span class="icon">
-            <span>{{ file.isDirectory ? '📁' : '📄' }}</span>
-          </span>
-          <span class="name">
-            <a :href="fileLink(file)">{{ file.name }}</a>
-          </span>
-          <span class="size">{{ formatSize(file.size) }}</span>
-          <span class="date">{{ formatDate(file.mtimeMs) }}</span>
-        </div>
-      `,
-    });
-
-    // 组件 - 文件列表
-    const FileList = defineComponent({
-      name: 'FileList',
-      components: {
-        FileGridItem,
-        FileListItem,
-      },
-      props: {
-        files: {
-          type: Array,
-          default: () => [],
-        },
-        loading: {
-          type: Boolean,
-          default: false,
-        },
-        error: {
-          type: String,
-          default: '',
-        },
-        layout: {
-          type: String,
-          default: 'grid',
-        },
-        currentPath: {
-          type: String,
-          default: '',
-        },
-        baseUrl: {
-          type: String,
-          default: '',
-        },
-      },
-      template: `
-        <div :class="['file-list', layout]">
-          <div v-if="loading" class="loading">加载中...</div>
-          <div v-else-if="error" class="error">加载失败: {{ error }}</div>
-          <div v-else-if="files.length === 0" class="empty">目录为空</div>
-          <template v-else-if="layout === 'grid'">
-            <FileGridItem
-              v-for="file in files"
-              :key="file.name"
-              :file="file"
-              :current-path="currentPath"
-              :base-url="baseUrl"
-            />
-          </template>
-          <template v-else-if="layout === 'list'">
-            <FileListItem
-              v-for="file in files"
-              :key="file.name"
-              :file="file"
-              :current-path="currentPath"
-              :base-url="baseUrl"
-            />
-          </template>
-          <template v-else>错误的 layout 值: {{ layout }}</template>
-        </div>
-      `,
-    });
-
-    // 组件 - 应用头部
-    const AppHeader = defineComponent({
-      name: 'AppHeader',
-      components: {
-        Breadcrumbs,
-      },
-      props: {
-        loggedIn: {
-          type: Boolean,
-          default: false,
-        },
-        currentPath: {
-          type: String,
-          default: '',
-        },
-        layout: {
-          type: String,
-          default: 'grid',
-        },
-        instanceName: {
-          type: String,
-          default: 'ZPan',
-        },
-      },
-      emits: ['layout-change', 'open-upload', 'logout', 'navigate'],
-      setup() {
-        const changeLayout = (layout) => {
-          emit('layout-change', layout);
-        };
-
-        const onNavigate = (parts) => {
-          emit('navigate', parts);
-        };
-
-        return {
-          changeLayout,
-          onNavigate,
-        };
-      },
-      template: `
-        <div v-if="loggedIn" class="header">
-          <h1>{{ instanceName }}</h1>
-          <div class="toolbar">
-            <Breadcrumbs :path="currentPath" @navigate="onNavigate" />
-            <div class="actions">
-              <div class="layout-toggle">
-                <button :class="{ active: layout === 'grid' }" @click="$emit('layout-change', 'grid')">📷 Grid</button>
-                <button :class="{ active: layout === 'list' }" @click="$emit('layout-change', 'list')">📋 List</button>
-              </div>
-              <button class="upload-btn" @click="$emit('open-upload')">📤 上传文件</button>
-              <button class="logout-btn" @click="$emit('logout')">🚪 退出</button>
-            </div>
-          </div>
-        </div>
-      `,
-    });
+    // 组件 - 登录弹窗（异步加载）
+    const LoginModal = defineAsyncComponent(() =>
+      import('./components/login-modal.js')
+    );
 
     // 根组件
     const App = defineComponent({
       name: 'App',
       components: {
         AppHeader,
-        FileList,
         LoginModal,
         UploadModal,
       },
       setup() {
         const route = useRoute();
         const router = useRouter();
-        // 状态
-        const layout = ref(localStorage.getItem('zpan-layout') || 'grid');
-        const files = ref([]);
-        const loading = ref(true);
-        const error = ref(null);
-        const loggedIn = ref(false);
-        const checkingAuth = ref(true);
-        const baseUrl = ref(htmlBaseUrl);
-        const instanceName = ref('ZPan');
 
-        // 当前目录从路由参数获取
+        // 使用 Pinia stores
+        const authStore = useAuthStore();
+        const appStore = useAppStore();
+        const uploadStore = useUploadStore();
+
+        // Get current directory from route params for breadcrumb
         const currentDir = computed(() => {
-          return decodeURIComponent(route.params.dir || '');
+          const match = route.path.match(/^\/([^\/].*)?$/);
+          if (match && match[1]) {
+            return decodeURIComponent(match[1]);
+          }
+          return '';
         });
-
-        // 登录弹窗状态
-        const showLoginModal = ref(false);
-        const loginError = ref('');
-        const loggingIn = ref(false);
-
-        // 上传弹窗状态
-        const showUploadModal = ref(false);
-        const selectedFiles = ref([]);
-        const uploading = ref(false);
-        const uploadError = ref('');
-        const uploadSuccess = ref(false);
-        const uploadedFiles = ref([]);
-
-        // 构建完整 API URL
-        const apiUrl = (path) => baseUrl.value + path;
-
-        // 加载公共配置
-        async function loadConfig() {
-          try {
-            const res = await fetch(apiUrl('/api/config'));
-            const data = await res.json();
-            baseUrl.value = data.baseUrl || '';
-            instanceName.value = data.name || 'ZPan';
-          } catch (err) {
-            console.error('Failed to load config:', err);
-            baseUrl.value = '';
-          }
-        }
-
-        // 检查认证状态
-        async function checkAuth() {
-          try {
-            const res = await fetch(apiUrl('/api/auth/status'));
-            const data = await res.json();
-            loggedIn.value = data.loggedIn;
-          } catch (err) {
-            console.error(err);
-          } finally {
-            checkingAuth.value = false;
-            if (loggedIn.value) {
-              loadDirectory();
-            } else {
-              openLoginModal();
-            }
-          }
-        }
-
-        // 加载目录
-        async function loadDirectory() {
-          if (!loggedIn.value) return;
-
-          loading.value = true;
-          error.value = null;
-
-          try {
-            const response = await fetch(apiUrl(`/api/list?dir=${encodeURIComponent(currentDir.value)}`));
-            if (!response.ok) {
-              throw new Error('网络错误');
-            }
-            files.value = await response.json();
-          } catch (err) {
-            error.value = err.message;
-          } finally {
-            loading.value = false;
-          }
-        }
-
-        // 打开登录弹窗
-        function openLoginModal() {
-          showLoginModal.value = true;
-          loginError.value = '';
-        }
-
-        // 关闭登录弹窗
-        function closeLoginModal() {
-          showLoginModal.value = false;
-          loginError.value = '';
-        }
-
-        // 处理登录
-        async function handleLogin({ username, password }) {
-          loggingIn.value = true;
-          loginError.value = '';
-
-          try {
-            const res = await fetch(apiUrl('/api/auth/login'), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username, password }),
-            });
-            const data = await res.json();
-
-            if (data.success) {
-              loggedIn.value = true;
-              closeLoginModal();
-              loadDirectory();
-            } else {
-              loginError.value = '用户名或密码错误';
-            }
-          } catch (err) {
-            loginError.value = err.message;
-          } finally {
-            loggingIn.value = false;
-          }
-        }
-
-        // 处理退出
-        async function handleLogout() {
-          try {
-            await fetch(apiUrl('/api/auth/logout'));
-            loggedIn.value = false;
-            files.value = [];
-            error.value = null;
-            openLoginModal();
-          } catch (err) {
-            console.error(err);
-          }
-        }
-
-        // 打开上传弹窗
-        function openUploadModal() {
-          showUploadModal.value = true;
-          selectedFiles.value = [];
-          uploadError.value = '';
-          uploadSuccess.value = false;
-          uploadedFiles.value = [];
-        }
-
-        // 关闭上传弹窗
-        function closeUploadModal() {
-          showUploadModal.value = false;
-          selectedFiles.value = [];
-        }
-
-        // 文件选择
-        function handleFileSelect(e) {
-          const files = Array.from(e.target.files);
-          selectedFiles.value.push(...files);
-          // 清空输入以便重复选择相同文件
-          e.target.value = '';
-        }
-
-        // 移除文件
-        function removeFile(index) {
-          selectedFiles.value.splice(index, 1);
-        }
-
-        // 上传文件
-        async function handleUpload() {
-          uploading.value = true;
-          uploadError.value = '';
-          uploadSuccess.value = false;
-          uploadedFiles.value = [];
-
-          const formData = new FormData();
-          formData.append('dir', currentDir.value);
-          selectedFiles.value.forEach(file => {
-            formData.append('file', file);
-          });
-
-          try {
-            const res = await fetch(apiUrl('/api/upload'), {
-              method: 'POST',
-              body: formData,
-            });
-            const data = await res.json();
-
-            if (data.success) {
-              uploadSuccess.value = true;
-              uploadedFiles.value = data.files;
-              // 重新加载目录
-              loadDirectory();
-              // 1.5秒后关闭
-              setTimeout(() => {
-                closeUploadModal();
-              }, 1500);
-            } else {
-              uploadError.value = data.error || '上传失败';
-            }
-          } catch (err) {
-            uploadError.value = err.message;
-          } finally {
-            uploading.value = false;
-          }
-        }
 
         // 导航到指定目录
         function navigateTo(parts) {
@@ -1103,97 +92,93 @@
           router.push('/' + encodeURIComponent(path));
         }
 
-        // 监听路由变化
-        watch(() => route.params.dir, () => {
-          if (loggedIn.value) {
-            loadDirectory();
-          }
-        });
-
-        // 监听布局变化保存到本地存储
-        watch(layout, (val) => {
-          localStorage.setItem('zpan-layout', val);
-        });
+        // 返回文件列表
+        function backToFiles() {
+          router.push('/');
+        }
 
         onMounted(async () => {
-          await loadConfig();
-          checkAuth();
+          await appStore.loadConfig();
+          await authStore.checkAuth();
         });
 
         return {
-          layout,
+          // State from stores
+          layout: () => appStore.layout,
           currentDir,
-          files,
-          loading,
-          error,
-          loggedIn,
-          checkingAuth,
-          baseUrl,
-          instanceName,
-          showLoginModal,
-          loginError,
-          loggingIn,
-          showUploadModal,
-          selectedFiles,
-          uploading,
-          uploadError,
-          uploadSuccess,
-          uploadedFiles: uploadedFiles,
-          currentDir,
+          loggedIn: () => authStore.loggedIn,
+          checkingAuth: () => authStore.checkingAuth,
+          baseUrl: () => appStore.baseUrl,
+          instanceName: () => appStore.instanceName,
+          showLoginModal: () => authStore.showLoginModal,
+          loginError: () => authStore.loginError,
+          loggingIn: () => authStore.loggingIn,
+          showUploadModal: () => uploadStore.showUploadModal,
+          selectedFiles: () => uploadStore.selectedFiles,
+          uploading: () => uploadStore.uploading,
+          uploadError: () => uploadStore.uploadError,
+          uploadSuccess: () => uploadStore.uploadSuccess,
+          uploadedFiles: () => uploadStore.uploadedFiles,
+          isAdmin: () => authStore.isAdmin,
+
+          // Methods
           navigateTo,
-          loadDirectory,
-          openLoginModal,
-          closeLoginModal,
-          handleLogin,
-          openUploadModal,
-          closeUploadModal,
-          handleFileSelect,
-          removeFile,
-          handleUpload,
-          handleLogout,
-          onLayoutChange: (val) => layout.value = val,
+          backToFiles,
+          onLayoutChange: (val) => appStore.setLayout(val),
+          handleLogin: (credentials) => authStore.login(credentials.username, credentials.password, route),
+          handleLogout: () => authStore.logout(),
+          openLoginModal: () => authStore.openLoginModal(),
+          closeLoginModal: () => authStore.closeLoginModal(),
+          openUploadModal: () => uploadStore.openUploadModal(),
+          closeUploadModal: () => uploadStore.closeUploadModal(),
+          handleFileSelect: (e) => uploadStore.handleFileSelect(e),
+          removeFile: (index) => uploadStore.removeFile(index),
+          handleUpload: () => uploadStore.handleUpload(currentDir.value),
+          goToUsers: () => authStore.goToUsers(),
         };
       },
       template: `
         <div class="container">
           <AppHeader
-            :logged-in="loggedIn"
+            :logged-in="loggedIn()"
             :current-path="currentDir"
-            :layout="layout"
-            :instance-name="instanceName"
+            :layout="layout()"
+            :instance-name="instanceName()"
+            :is-admin="isAdmin()"
             @layout-change="onLayoutChange"
             @open-upload="openUploadModal"
             @logout="handleLogout"
             @navigate="navigateTo"
+            @go-to-users="goToUsers"
           />
 
-          <template v-if="loggedIn">
-            <FileList
-              :files="files"
-              :loading="loading"
-              :error="error"
-              :layout="layout"
-              :current-path="currentDir"
-              :base-url="baseUrl"
+          <router-view
+            v-slot="{ Component }"
+          >
+            <component
+              :is="Component"
+              :logged-in="loggedIn()"
+              :layout="layout()"
+              :base-url="baseUrl()"
             />
-          </template>
+          </router-view>
 
           <LoginModal
-            :show="showLoginModal"
-            :error="loginError"
-            :loading="loggingIn"
+            :show="showLoginModal()"
+            :error="loginError()"
+            :loading="loggingIn()"
             @close="closeLoginModal"
             @login="handleLogin"
           />
 
           <UploadModal
-            :show="showUploadModal"
+            :show="showUploadModal()"
             :current-dir="currentDir"
-            :selected-files="selectedFiles"
-            :uploading="uploading"
-            :error="uploadError"
-            :success="uploadSuccess"
-            :uploaded-count="uploadedFiles.length"
+            :selected-files="selectedFiles()"
+            :uploading="uploading()"
+            :error="uploadError()"
+            :success="uploadSuccess()"
+            :uploaded-count="uploadedFiles().length"
             @close="closeUploadModal"
             @file-select="handleFileSelect"
             @remove-file="removeFile"
@@ -1203,20 +188,12 @@
       `,
     });
 
-    // 创建路由
-    const router = createRouter({
-      history: VueRouter.createWebHashHistory(),
-      routes: [
-        {
-          path: '/:dir*',
-          component: App,
-        },
-      ],
-    });
-
     // 创建应用
+    const pinia = createPinia();
+    // App 就是根布局，本身包含 <router-view>，不需要再嵌套
     createApp(App)
       .use(router)
+      .use(pinia)
       .mount('#app');
   </script>
 </body>
