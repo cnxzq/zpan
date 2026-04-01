@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm whoami:*)",
+      "Bash(nrm use:*)",
+      "Bash(npm publish:*)",
+      "Bash(grep:*)",
+      "Bash(node:*)",
+      "Bash(npm test:*)",
+      "Bash(timeout:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm:*)",
+      "Bash(git pull:*)",
+      "Bash(git remote:*)",
+      "Bash(echo:*)",
+      "Bash(git checkout:*)",
+      "Bash(cd:*)"
+    ]
+  }
+}
